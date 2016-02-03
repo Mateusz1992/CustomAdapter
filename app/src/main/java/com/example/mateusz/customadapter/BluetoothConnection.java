@@ -1,14 +1,18 @@
 package com.example.mateusz.customadapter;
 
 import android.annotation.TargetApi;
+import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -20,7 +24,7 @@ import java.util.UUID;
 /**
  * Created by Mateusz on 2015-12-16.
  */
-public class BluetoothConnection {
+public class BluetoothConnection{
 
     private static final String TAG = "BluetoothConnection";
     public ConnectThread mConnectThread;
@@ -184,10 +188,11 @@ public class BluetoothConnection {
 
         // Start the thread to connect with the given device
         mConnectThread = new ConnectThread(device);
-        /*if (mConnectThread.isSocketEmpty())
+        if (mConnectThread.isSocketEmpty())
         {
             mHandler.obtainMessage(Constants.MESSAGE_SOCKET_ERROR).sendToTarget();
-        }*/
+        }
+
         mConnectThread.start();
         setState(STATE_CONNECTING);
 
@@ -219,7 +224,11 @@ public class BluetoothConnection {
         // Start the thread to manage the connection and perform transmissions
         setState(STATE_CONNECTED);
         mConnectedThread = new ConnectedThread(socket);
-        mConnectedThread.start();
+
+        if(mConnectedThread != null)
+        {
+            mConnectedThread.start();
+        }
 
         // Send the name of the connected device back to the UI Activity
         /*Message msg = mHandler.obtainMessage(Constants.MESSAGE_DEVICE_NAME);
@@ -230,6 +239,7 @@ public class BluetoothConnection {
 
         //setState(STATE_CONNECTED);
     }
+
 
 
     private class ConnectThread extends Thread
@@ -263,7 +273,7 @@ public class BluetoothConnection {
         public void run()
         {
             bluetoothAdapter.cancelDiscovery();
-
+            boolean isOk = true;
 
             try
             {
@@ -271,11 +281,11 @@ public class BluetoothConnection {
                 if (mmSocket != null)
                 {
                     mmSocket.connect();
-                   // Toast.makeText(activityContext, "Jestem w ConnectThread - run()", Toast.LENGTH_LONG).show();
+                    //Toast.makeText(activityContext, "Jestem w ConnectThread - run()", Toast.LENGTH_LONG).show();
                 }
                 else
                 {
-                    //Toast.makeText(activityContext, "Nie jestem w ConnectThread - run()", Toast.LENGTH_LONG).show();
+                   // Toast.makeText(activityContext, "Nie jestem w ConnectThread - run()", Toast.LENGTH_LONG).show();
                 }
             }
             catch (IOException e) {
@@ -283,16 +293,19 @@ public class BluetoothConnection {
                 try
                 {
                     mmSocket.close();
-                   // Toast.makeText(activityContext, "Unable to connect", Toast.LENGTH_LONG);
+                    //connectionFailed();
+                    //Toast.makeText(activityContext, "Unable to connect", Toast.LENGTH_LONG);
+                    mHandler.obtainMessage(Constants.MESSAGE_DEVICE_UNAVAILABLE).sendToTarget();
                 }catch (IOException e2)
                 {
                     Log.e(TAG, "unable to close() " + mmSocket +
                             " socket during connection failure", e2);
                     mHandler.obtainMessage(Constants.MESSAGE_CLOSE_SOCKET_ERROR).sendToTarget();
                 }
-                mHandler.obtainMessage(Constants.MESSAGE_SOCKET_ERROR).sendToTarget();
+                //mHandler.obtainMessage(Constants.MESSAGE_SOCKET_ERROR).sendToTarget();
                 //connectionFailed();
-                return;
+                isOk = false;
+              //  return;
             }
 
 
@@ -301,7 +314,10 @@ public class BluetoothConnection {
                 mConnectThread = null;
             }
 
-            connected(mmSocket, mmDevice, "Dupa");
+            if(isOk)
+            {
+                connected(mmSocket, mmDevice, "Dupa");
+            }
 
         }
 
@@ -358,6 +374,7 @@ public class BluetoothConnection {
         {
             byte[] buffer = new byte[1024];
             int bytes;
+
             String dupa;
 
             while (true)

@@ -124,14 +124,19 @@ public class MainActivity extends AppCompatActivity {
                             device_paired.chapterDescription = "\nPaired ";
                             bluetoothDevicesList.add(device_paired);
                         }
+                        Toast.makeText(MainActivity.this, "PairedDevices", Toast.LENGTH_LONG).show();
                         setListLayout();
                     }
 
-                    if(bluetoothAdapter.startDiscovery())
+                    if(!bluetoothAdapter.startDiscovery())
+                    {
+
+                    }
+                    else
                     {
                         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
                         registerReceiver(mReceiver, filter);
-                        Toast.makeText(MainActivity.this, "Searching for devices", Toast.LENGTH_LONG);
+                        Toast.makeText(MainActivity.this, "Searching for devices", Toast.LENGTH_LONG).show();
                     }
                 }
             }
@@ -181,6 +186,7 @@ public class MainActivity extends AppCompatActivity {
 
                         }
                     }*/
+                    Toast.makeText(MainActivity.this, "MainActivity11", Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(MainActivity.this, ChosenDevice.class);
                     //Bundle bAdapter = new Bundle();
                     //bAdapter.putParcelable("adapter", tmpDevice);

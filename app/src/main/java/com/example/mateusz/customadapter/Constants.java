@@ -12,6 +12,8 @@ public interface Constants {
     public static final int MESSAGE_TOAST = 5;
     public static final int MESSAGE_SOCKET_ERROR = 6;
     public static final int MESSAGE_CLOSE_SOCKET_ERROR = 7;
+    public static final int MESSAGE_DEVICE_UNAVAILABLE = 8;
+    public static final int MESSAGE_DEVICE_CONNECTED_SUCCESSFULLY = 9;
 
     // Key names received from the BluetoothChatService Handler
     public static final String DEVICE_NAME = "device_name";
