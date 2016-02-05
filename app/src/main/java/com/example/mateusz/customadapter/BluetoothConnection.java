@@ -1,20 +1,16 @@
 package com.example.mateusz.customadapter;
 
-import android.annotation.TargetApi;
-import android.app.Service;
+
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
-import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Message;
-import android.support.annotation.Nullable;
 import android.util.Log;
-import android.widget.Toast;
+
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,6 +38,7 @@ public class BluetoothConnection{
     public BluetoothAdapter bluetoothAdapter = null;
     public BluetoothDevice connectedDevice = null;
     private Context activityContext;
+    private String chosen_sensor;
 
 
 
@@ -54,6 +51,17 @@ public class BluetoothConnection{
 
         connectedDevice = tmpDevice;
         activityContext = tmpContext;
+    }
+
+    public BluetoothConnection(Handler tmpHandler, BluetoothAdapter tmpBluetoothAdapter, BluetoothDevice tmpDevice, Context tmpContext, String chosen_sensor)
+    {
+        mHandler = tmpHandler;
+        bluetoothAdapter = tmpBluetoothAdapter;
+
+        connectedDevice = tmpDevice;
+        activityContext = tmpContext;
+
+        this.chosen_sensor = chosen_sensor;
     }
 
     /**
@@ -172,6 +180,22 @@ public class BluetoothConnection{
     public synchronized void connect(BluetoothDevice device) {
         Log.d(TAG, "connect to: " + device);
 
+        //Check if you have chosen a device
+        if(chosen_sensor == null)
+        {
+            mHandler.obtainMessage(Constants.MESSAGE_DEVICE_NO_CHOICE).sendToTarget();
+        }
+
+        //Check if you have chosen available device
+        if(chosen_sensor.equals(new String("LSM9DS1")))
+        {
+            mHandler.obtainMessage(Constants.MESSAGE_CHOSEN_DEVICE).sendToTarget();
+        }
+        else //else jest dla urzadzenia niedostepnego
+        {
+
+        }
+
         // Cancel any thread attempting to make a connection
         if (mState == STATE_CONNECTING) {
             if (mConnectThread != null) {
@@ -248,6 +272,11 @@ public class BluetoothConnection{
         private BluetoothDevice mmDevice;
         private final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
+        private final long WAITING_TIME = 10000;
+        private final long WAITING_INTERVAL = 1000;
+
+        private MyTimer timer;
+
         ConnectThread(BluetoothDevice device)
         {
             BluetoothSocket temporarySocket = null;
@@ -260,6 +289,7 @@ public class BluetoothConnection{
             }
             mmSocket = temporarySocket;
         }
+
 
         public boolean isSocketEmpty()
         {
@@ -280,6 +310,12 @@ public class BluetoothConnection{
                 //manageConnectedSocket(mmSocket);
                 if (mmSocket != null)
                 {
+                    //TURN ON TIME COUNTER
+                    //IN ORDER TO
+                    //timer = new MyTimer(WAITING_TIME, WAITING_INTERVAL);
+                    //timer.start();
+
+                    //CONNECTING TO THE DEVICE
                     mmSocket.connect();
                     //Toast.makeText(activityContext, "Jestem w ConnectThread - run()", Toast.LENGTH_LONG).show();
                 }
@@ -295,7 +331,7 @@ public class BluetoothConnection{
                     mmSocket.close();
                     //connectionFailed();
                     //Toast.makeText(activityContext, "Unable to connect", Toast.LENGTH_LONG);
-                    mHandler.obtainMessage(Constants.MESSAGE_DEVICE_UNAVAILABLE).sendToTarget();
+                    mHandler.obtainMessage(Constants.MESSAGE_BLUETOOTH_DEVICE_UNAVAILABLE).sendToTarget();
                 }catch (IOException e2)
                 {
                     Log.e(TAG, "unable to close() " + mmSocket +
@@ -337,6 +373,49 @@ public class BluetoothConnection{
                 e.printStackTrace();
             }
         }
+
+
+        class MyTimer extends CountDownTimer
+        {
+
+            public MyTimer(long millisInFuture, long countDownInterval)
+            {
+                super(millisInFuture, countDownInterval);
+
+
+            }
+
+            @Override
+            public void onTick(long millisUntilFinished) {
+             //   textView.setText("seconds remaining: " + millisUntilFinished / 1000);
+                //Sprawdzamy czy BluetoothSocket nie jest pusty
+                //Jesli nie jest pusty to oznacza, ze polaczylismy sie
+                if(!isSocketEmpty())
+                {
+
+                }
+                try {
+                    mmSocket.connect();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFinish() {
+                //
+                if(isSocketEmpty())
+                {
+
+                }
+                else if(!isSocketEmpty())
+                {
+
+                }
+               // textView.setText("done !");
+            }
+        }
+
 
     }
 

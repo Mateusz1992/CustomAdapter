@@ -7,4 +7,7 @@
     <string name="messageReceived">Large Text</string>
     <string name="title_activity_lsm9_ds1_sensor">LSM9DS1_sensor</string>
     <string name="icon">icon</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
