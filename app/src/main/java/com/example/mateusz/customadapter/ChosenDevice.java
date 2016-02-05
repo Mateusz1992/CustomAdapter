@@ -27,13 +27,13 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import android.support.v4.app.FragmentActivity;
+import android.app.Activity;
 
-public class ChosenDevice extends FragmentActivity {
+public class ChosenDevice extends Activity {
 
     EditText messageRx;
     static List<String> msgs;
-    static FragmentActivity/*AppCompatActivity*/ thisActivity = null;
+    static Activity/*AppCompatActivity*/ thisActivity = null;
     public BluetoothConnection connection = null;
     BluetoothAdapter receivedBluetoothAdapter;
     BluetoothDevice receivedBluetoothDevice;
@@ -42,6 +42,7 @@ public class ChosenDevice extends FragmentActivity {
     //Set<BluetoothDevice> pairedDevices;
     List<menuItem> sensorsList = new ArrayList<menuItem>();
     ListView menuDevices = null;
+    TextView textConnection = null;
 
 
     /*public void setListLayout() {
@@ -138,6 +139,8 @@ public class ChosenDevice extends FragmentActivity {
         singleItem.addSensor(model,name);
         sensorsList.add(singleItem);
 
+
+        textConnection = (TextView)findViewById(R.id.textConnection);
        // Bundle bundle = getIntent().getExtras();
        // String msg = bundle.getString("key");
 
@@ -294,6 +297,7 @@ public class ChosenDevice extends FragmentActivity {
                             break;
                         case BluetoothConnection.STATE_CONNECTING:
                             Toast.makeText(thisActivity, "STATE_CONNECTING - handle", Toast.LENGTH_LONG).show();
+                            textConnection.setText("Connecting....");
                             //Log.e(TAG, "2");
                             break;
                         case BluetoothConnection.STATE_LISTEN:
@@ -328,6 +332,7 @@ public class ChosenDevice extends FragmentActivity {
                     break;
                 case Constants.MESSAGE_BLUETOOTH_DEVICE_UNAVAILABLE:
                     Toast.makeText(thisActivity, "Bluetooth device unavailable", Toast.LENGTH_LONG).show();
+                    textConnection.setText("Bluetooth device unavailable");
                     //thisActivity.finish();
                     break;
                 case Constants.MESSAGE_DEVICE_CONNECTED_SUCCESSFULLY:

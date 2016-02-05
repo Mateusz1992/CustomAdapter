@@ -22,4 +22,13 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"></FrameLayout>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="no connected"
+        android:id="@+id/textConnection"
+        android:layout_below="@+id/fragment_container"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
 </RelativeLayout>

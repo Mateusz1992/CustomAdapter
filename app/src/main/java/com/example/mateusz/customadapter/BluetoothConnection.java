@@ -187,14 +187,14 @@ public class BluetoothConnection{
         }
 
         //Check if you have chosen available device
-        if(chosen_sensor.equals(new String("LSM9DS1")))
+        /*if(chosen_sensor.equals(new String("LSM9DS1")))
         {
             mHandler.obtainMessage(Constants.MESSAGE_CHOSEN_DEVICE).sendToTarget();
         }
         else //else jest dla urzadzenia niedostepnego
         {
 
-        }
+        }*/
 
         // Cancel any thread attempting to make a connection
         if (mState == STATE_CONNECTING) {
@@ -275,6 +275,8 @@ public class BluetoothConnection{
         private final long WAITING_TIME = 10000;
         private final long WAITING_INTERVAL = 1000;
 
+        boolean isOk = true;
+
         private MyTimer timer;
 
         ConnectThread(BluetoothDevice device)
@@ -303,7 +305,6 @@ public class BluetoothConnection{
         public void run()
         {
             bluetoothAdapter.cancelDiscovery();
-            boolean isOk = true;
 
             try
             {
@@ -312,7 +313,7 @@ public class BluetoothConnection{
                 {
                     //TURN ON TIME COUNTER
                     //IN ORDER TO
-                    //timer = new MyTimer(WAITING_TIME, WAITING_INTERVAL);
+                    //timer = new MyTimer(WAITING_TIME, WAITING_INTERVAL, mHandler);
                     //timer.start();
 
                     //CONNECTING TO THE DEVICE
@@ -377,10 +378,11 @@ public class BluetoothConnection{
 
         class MyTimer extends CountDownTimer
         {
-
-            public MyTimer(long millisInFuture, long countDownInterval)
+            private Handler mHandlerCountDown = null;
+            public MyTimer(long millisInFuture, long countDownInterval, Handler mHandlerCountDown)
             {
                 super(millisInFuture, countDownInterval);
+               // this.mHandlerCountDown = mHandlerCountDown;
 
 
             }
@@ -392,12 +394,33 @@ public class BluetoothConnection{
                 //Jesli nie jest pusty to oznacza, ze polaczylismy sie
                 if(!isSocketEmpty())
                 {
-
+                    //mHandlerCountDown.obtainMessage(Constants.MESSAGE_DEVICE_CONNECTED_SUCCESSFULLY).sendToTarget();
                 }
-                try {
-                    mmSocket.connect();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                else
+                {
+                    try
+                    {
+                        mmSocket.connect();
+                    }
+                    catch (IOException e) {
+                        try
+                        {
+                            mmSocket.close();
+                            //connectionFailed();
+                            //Toast.makeText(activityContext, "Unable to connect", Toast.LENGTH_LONG);
+                           // mHandlerCountDown.obtainMessage(Constants.MESSAGE_BLUETOOTH_DEVICE_UNAVAILABLE).sendToTarget();
+                            this.cancel();
+                        }catch (IOException e2)
+                        {
+                            Log.e(TAG, "unable to close() " + mmSocket +
+                                    " socket during connection failure", e2);
+                            //mHandlerCountDown.obtainMessage(Constants.MESSAGE_CLOSE_SOCKET_ERROR).sendToTarget();
+                        }
+                        //mHandler.obtainMessage(Constants.MESSAGE_SOCKET_ERROR).sendToTarget();
+                        //connectionFailed();
+                        isOk = false;
+                        //  return;
+                    }
                 }
             }
 
