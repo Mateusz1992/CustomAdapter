@@ -277,7 +277,6 @@ public class BluetoothConnection{
 
         boolean isOk = true;
 
-        private MyTimer timer;
 
         ConnectThread(BluetoothDevice device)
         {
@@ -332,12 +331,19 @@ public class BluetoothConnection{
                     mmSocket.close();
                     //connectionFailed();
                     //Toast.makeText(activityContext, "Unable to connect", Toast.LENGTH_LONG);
+
+
                     mHandler.obtainMessage(Constants.MESSAGE_BLUETOOTH_DEVICE_UNAVAILABLE).sendToTarget();
+                    //setState(Constants.MESSAGE_BLUETOOTH_DEVICE_UNAVAILABLE);
                 }catch (IOException e2)
                 {
                     Log.e(TAG, "unable to close() " + mmSocket +
                             " socket during connection failure", e2);
+
+
                     mHandler.obtainMessage(Constants.MESSAGE_CLOSE_SOCKET_ERROR).sendToTarget();
+
+                    //setState(Constants.MESSAGE_CLOSE_SOCKET_ERROR);
                 }
                 //mHandler.obtainMessage(Constants.MESSAGE_SOCKET_ERROR).sendToTarget();
                 //connectionFailed();
@@ -376,68 +382,7 @@ public class BluetoothConnection{
         }
 
 
-        class MyTimer extends CountDownTimer
-        {
-            private Handler mHandlerCountDown = null;
-            public MyTimer(long millisInFuture, long countDownInterval, Handler mHandlerCountDown)
-            {
-                super(millisInFuture, countDownInterval);
-               // this.mHandlerCountDown = mHandlerCountDown;
 
-
-            }
-
-            @Override
-            public void onTick(long millisUntilFinished) {
-             //   textView.setText("seconds remaining: " + millisUntilFinished / 1000);
-                //Sprawdzamy czy BluetoothSocket nie jest pusty
-                //Jesli nie jest pusty to oznacza, ze polaczylismy sie
-                if(!isSocketEmpty())
-                {
-                    //mHandlerCountDown.obtainMessage(Constants.MESSAGE_DEVICE_CONNECTED_SUCCESSFULLY).sendToTarget();
-                }
-                else
-                {
-                    try
-                    {
-                        mmSocket.connect();
-                    }
-                    catch (IOException e) {
-                        try
-                        {
-                            mmSocket.close();
-                            //connectionFailed();
-                            //Toast.makeText(activityContext, "Unable to connect", Toast.LENGTH_LONG);
-                           // mHandlerCountDown.obtainMessage(Constants.MESSAGE_BLUETOOTH_DEVICE_UNAVAILABLE).sendToTarget();
-                            this.cancel();
-                        }catch (IOException e2)
-                        {
-                            Log.e(TAG, "unable to close() " + mmSocket +
-                                    " socket during connection failure", e2);
-                            //mHandlerCountDown.obtainMessage(Constants.MESSAGE_CLOSE_SOCKET_ERROR).sendToTarget();
-                        }
-                        //mHandler.obtainMessage(Constants.MESSAGE_SOCKET_ERROR).sendToTarget();
-                        //connectionFailed();
-                        isOk = false;
-                        //  return;
-                    }
-                }
-            }
-
-            @Override
-            public void onFinish() {
-                //
-                if(isSocketEmpty())
-                {
-
-                }
-                else if(!isSocketEmpty())
-                {
-
-                }
-               // textView.setText("done !");
-            }
-        }
 
 
     }
@@ -461,6 +406,7 @@ public class BluetoothConnection{
                 {
                     tmpIn = connectedSocket.getInputStream();
                     tmpOut = connectedSocket.getOutputStream();
+                    mHandler.obtainMessage(Constants.MESSAGE_DEVICE_CONNECTED_SUCCESSFULLY).sendToTarget();
                    // Toast.makeText(activityContext, "connectedSocket != null", Toast.LENGTH_LONG);
                 }
             }

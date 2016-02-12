@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
+import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Message;
 import android.app.FragmentTransaction;
@@ -43,6 +44,9 @@ public class ChosenDevice extends Activity {
     List<menuItem> sensorsList = new ArrayList<menuItem>();
     ListView menuDevices = null;
     TextView textConnection = null;
+    ArrayList<String>availableDevice = null;
+    ArrayList<TurnedOnDevice>turnedOnDevices = null;
+    int chosenDevice = -1;
 
 
     /*public void setListLayout() {
@@ -59,7 +63,33 @@ public class ChosenDevice extends Activity {
         });
     };*/
 
+    public class TurnedOnDevice
+    {
+        private String model;
+        private boolean isTurnedOn;
 
+        public TurnedOnDevice()
+        {
+            model = null;
+            isTurnedOn = false;
+        }
+
+        public TurnedOnDevice(String model, boolean isTurnedOn)
+        {
+            this.model = model;
+            this.isTurnedOn = isTurnedOn;
+        }
+
+        boolean getIsTurnedOn()
+        {
+            return isTurnedOn;
+        }
+
+        String getModel()
+        {
+            return model;
+        }
+    }
 
     public class menuItem {
         String sensorModel;
@@ -132,11 +162,17 @@ public class ChosenDevice extends Activity {
         Toast.makeText(ChosenDevice.this, "Chosen Device - onCreate()",Toast.LENGTH_SHORT).show();
         msgs = new ArrayList<>();
 
-
+        turnedOnDevices = new ArrayList<>();
+        availableDevice = new ArrayList<>();
         menuItem singleItem = new menuItem();
+
+
         String model = "LSM9DS1";
         String name = "Accelerometer, Magnetometer, Gyroscope";
-        singleItem.addSensor(model,name);
+        TurnedOnDevice singleDevice = new TurnedOnDevice(model, false);
+        turnedOnDevices.add(singleDevice);
+        availableDevice.add(model);
+        singleItem.addSensor(model, name);
         sensorsList.add(singleItem);
 
 
@@ -166,7 +202,7 @@ public class ChosenDevice extends Activity {
             connection = null;
         }
 
-        if (connection == null) {
+        /*if (connection == null) {
             Toast.makeText(this, "onResume() -- connection == null", Toast.LENGTH_LONG).show();
             if ((receivedBluetoothDevice == null) || (receivedBluetoothAdapter == null)) {
                 finish();
@@ -178,7 +214,7 @@ public class ChosenDevice extends Activity {
                 //Toast.makeText();
                 finish();
             }
-            connection.connect(receivedBluetoothDevice);
+            connection.connect(receivedBluetoothDevice);*/
 
             final adapterMenu menuItems = new adapterMenu();
             menuDevices = (ListView) findViewById(R.id.choosingSensor);
@@ -188,7 +224,29 @@ public class ChosenDevice extends Activity {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-                    if (findViewById(R.id.fragment_container) != null)
+                    /*TextView cos  = (TextView)view.findViewById(R.id.modelName);
+
+                    String cos1 = cos.toString();*/
+
+
+                    if (connection == null) {
+                        //Toast.makeText(this, "onResume() -- connection == null", Toast.LENGTH_LONG).show();
+                        if ((receivedBluetoothDevice == null) || (receivedBluetoothAdapter == null)) {
+                            finish();
+                        }
+
+                        connection = new BluetoothConnection(mHandler, receivedBluetoothAdapter, receivedBluetoothDevice, ChosenDevice.this);
+
+                        if (connection == null) {
+                            //Toast.makeText();
+                            finish();
+                        }
+
+                        chosenDevice = position;
+                        connection.connect(receivedBluetoothDevice);
+                    }
+
+                    /*if (findViewById(R.id.fragment_container) != null)
                     {
                         Log.d("Pełny", "TAG");
                     }
@@ -205,7 +263,7 @@ public class ChosenDevice extends Activity {
 
                     fragmentTransaction.add(R.id.fragment_container, new Measurements());
                     fragmentTransaction.commit();
-                    Toast.makeText(ChosenDevice.this, "ChosenDevice.java onResume()", Toast.LENGTH_LONG);
+                    Toast.makeText(ChosenDevice.this, "ChosenDevice.java onResume()", Toast.LENGTH_LONG);*/
 
                     /*menuItem item = menuItems.getMenuItem(position);
                     Intent intent = new Intent(ChosenDevice.this, LSM9DS1_sensor.class);
@@ -216,7 +274,7 @@ public class ChosenDevice extends Activity {
 
                 }
             });
-        }
+        //}
     }
 
     @Override
@@ -318,7 +376,15 @@ public class ChosenDevice extends Activity {
                     byte[] readBuf = (byte[]) msg.obj;
 
                     String readMessage = new String(readBuf, 0, msg.arg1);
-                    setTextChosenDevice(readMessage);
+
+                    if(readMessage != null)
+                    {
+                        if(readMessage.equals(availableDevice.get(chosenDevice) + "OK") && (turnedOnDevices.get(chosenDevice).getIsTurnedOn() == false))
+                        {
+
+                        }
+                    }
+                    //setTextChosenDevice(readMessage);
 
 
                     //Toast.makeText(MainActivity.this, "MESSAGE_READ", Toast.LENGTH_LONG).show();
@@ -332,11 +398,14 @@ public class ChosenDevice extends Activity {
                     break;
                 case Constants.MESSAGE_BLUETOOTH_DEVICE_UNAVAILABLE:
                     Toast.makeText(thisActivity, "Bluetooth device unavailable", Toast.LENGTH_LONG).show();
+                    chosenDevice = -1;
                     textConnection.setText("Bluetooth device unavailable");
                     //thisActivity.finish();
                     break;
                 case Constants.MESSAGE_DEVICE_CONNECTED_SUCCESSFULLY:
                     Toast.makeText(thisActivity, "Device connected successfully", Toast.LENGTH_LONG).show();
+
+                    connection.write(availableDevice.get(chosenDevice).getBytes());
                     //thisActivity.finish();
                     break;
                 case Constants.MESSAGE_DEVICE_NO_CHOICE:
@@ -346,4 +415,38 @@ public class ChosenDevice extends Activity {
             }
         }
     };
+
+    public class TimerThread extends Thread
+    {
+        private class MyTimer extends CountDownTimer
+        {
+            private long countDownInterval;
+            private long millisInFuture;
+            /**
+             * @param millisInFuture    The number of millis in the future from the call
+             *                          to {@link #start()} until the countdown is done and {@link #onFinish()}
+             *                          is called.
+             * @param countDownInterval The interval along the way to receive
+             *                          {@link #onTick(long)} callbacks.
+             */
+            public MyTimer(long millisInFuture, long countDownInterval) {
+                super(millisInFuture, countDownInterval);
+
+                this.millisInFuture = millisInFuture;
+                this.countDownInterval = countDownInterval;
+            }
+
+            @Override
+            public void onTick(long millisUntilFinished)
+            {
+
+            }
+
+            @Override
+            public void onFinish()
+            {
+
+            }
+        }
+    }
 }
