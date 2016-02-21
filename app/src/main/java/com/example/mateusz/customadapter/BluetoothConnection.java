@@ -34,34 +34,39 @@ public class BluetoothConnection{
     public static final int STATE_CONNECTED = 3;  // now connected to a remote device
 
     public static final int MESSAGE_READ = 2;
-    public Handler mHandler = null;
+    //public Handler mHandler = null;
+    static Handler mHandler = new Handler();
     public BluetoothAdapter bluetoothAdapter = null;
     public BluetoothDevice connectedDevice = null;
-    private Context activityContext;
     private String chosen_sensor;
 
 
 
 
 
-    public BluetoothConnection(Handler tmpHandler, BluetoothAdapter tmpBluetoothAdapter, BluetoothDevice tmpDevice, Context tmpContext)
+    public BluetoothConnection(Handler tmpHandler, BluetoothAdapter tmpBluetoothAdapter, BluetoothDevice tmpDevice)
     {
         mHandler = tmpHandler;
         bluetoothAdapter = tmpBluetoothAdapter;
 
         connectedDevice = tmpDevice;
-        activityContext = tmpContext;
     }
 
-    public BluetoothConnection(Handler tmpHandler, BluetoothAdapter tmpBluetoothAdapter, BluetoothDevice tmpDevice, Context tmpContext, String chosen_sensor)
+    public BluetoothConnection(Handler tmpHandler, BluetoothAdapter tmpBluetoothAdapter, BluetoothDevice tmpDevice, String chosen_sensor)
     {
         mHandler = tmpHandler;
         bluetoothAdapter = tmpBluetoothAdapter;
 
         connectedDevice = tmpDevice;
-        activityContext = tmpContext;
 
         this.chosen_sensor = chosen_sensor;
+    }
+
+    public void disconnect(){
+        if (mConnectedThread != null) {
+            mConnectedThread.cancel();
+            mConnectedThread = null;
+        }
     }
 
     /**
@@ -89,7 +94,6 @@ public class BluetoothConnection{
      * session in listening (server) mode. Called by the Activity onResume()
      */
     public synchronized void start() {
-        Log.d(TAG, "start");
 
         // Cancel any thread attempting to make a connection
         if (mConnectThread != null) {
@@ -186,15 +190,6 @@ public class BluetoothConnection{
             mHandler.obtainMessage(Constants.MESSAGE_DEVICE_NO_CHOICE).sendToTarget();
         }
 
-        //Check if you have chosen available device
-        /*if(chosen_sensor.equals(new String("LSM9DS1")))
-        {
-            mHandler.obtainMessage(Constants.MESSAGE_CHOSEN_DEVICE).sendToTarget();
-        }
-        else //else jest dla urzadzenia niedostepnego
-        {
-
-        }*/
 
         // Cancel any thread attempting to make a connection
         if (mState == STATE_CONNECTING) {
@@ -216,9 +211,11 @@ public class BluetoothConnection{
         {
             mHandler.obtainMessage(Constants.MESSAGE_SOCKET_ERROR).sendToTarget();
         }
-
-        mConnectThread.start();
-        setState(STATE_CONNECTING);
+        else
+        {
+            mConnectThread.start();
+            setState(STATE_CONNECTING);
+        }
 
     }
 
@@ -228,9 +225,8 @@ public class BluetoothConnection{
      * @param socket The BluetoothSocket on which the connection was made
      * @param device The BluetoothDevice that has been connected
      */
-    public synchronized void connected(BluetoothSocket socket, BluetoothDevice
-            device, final String socketType) {
-        Log.d(TAG, "connected, Socket Type:" + socketType);
+    public synchronized void connected(BluetoothSocket socket, BluetoothDevice device) {
+        //Log.d(TAG, "connected, Socket Type:" + socketType);
 
         // Cancel the thread that completed the connection
         if (mConnectThread != null) {
@@ -254,14 +250,6 @@ public class BluetoothConnection{
             mConnectedThread.start();
         }
 
-        // Send the name of the connected device back to the UI Activity
-        /*Message msg = mHandler.obtainMessage(Constants.MESSAGE_DEVICE_NAME);
-        Bundle bundle = new Bundle();
-        bundle.putString(Constants.DEVICE_NAME, device.getName());
-        msg.setData(bundle);*/
-    //    mHandler.sendMessage(msg);
-
-        //setState(STATE_CONNECTED);
     }
 
 
@@ -310,31 +298,19 @@ public class BluetoothConnection{
                 //manageConnectedSocket(mmSocket);
                 if (mmSocket != null)
                 {
-                    //TURN ON TIME COUNTER
-                    //IN ORDER TO
-                    //timer = new MyTimer(WAITING_TIME, WAITING_INTERVAL, mHandler);
-                    //timer.start();
-
                     //CONNECTING TO THE DEVICE
                     mmSocket.connect();
-                    //Toast.makeText(activityContext, "Jestem w ConnectThread - run()", Toast.LENGTH_LONG).show();
                 }
-                else
-                {
-                   // Toast.makeText(activityContext, "Nie jestem w ConnectThread - run()", Toast.LENGTH_LONG).show();
-                }
+
             }
             catch (IOException e) {
                // e.printStackTrace();
                 try
                 {
                     mmSocket.close();
-                    //connectionFailed();
-                    //Toast.makeText(activityContext, "Unable to connect", Toast.LENGTH_LONG);
-
 
                     mHandler.obtainMessage(Constants.MESSAGE_BLUETOOTH_DEVICE_UNAVAILABLE).sendToTarget();
-                    //setState(Constants.MESSAGE_BLUETOOTH_DEVICE_UNAVAILABLE);
+
                 }catch (IOException e2)
                 {
                     Log.e(TAG, "unable to close() " + mmSocket +
@@ -343,12 +319,8 @@ public class BluetoothConnection{
 
                     mHandler.obtainMessage(Constants.MESSAGE_CLOSE_SOCKET_ERROR).sendToTarget();
 
-                    //setState(Constants.MESSAGE_CLOSE_SOCKET_ERROR);
                 }
-                //mHandler.obtainMessage(Constants.MESSAGE_SOCKET_ERROR).sendToTarget();
-                //connectionFailed();
                 isOk = false;
-              //  return;
             }
 
 
@@ -359,7 +331,7 @@ public class BluetoothConnection{
 
             if(isOk)
             {
-                connected(mmSocket, mmDevice, "Dupa");
+                connected(mmSocket, mmDevice);
             }
 
         }
@@ -411,6 +383,7 @@ public class BluetoothConnection{
                 }
             }
             catch (IOException e) {
+                mHandler.obtainMessage(Constants.MESSAGE_INPUT_OUTPUT_STREAM_UNAVAILABLE).sendToTarget();
                 e.printStackTrace();
             }
 
@@ -420,7 +393,7 @@ public class BluetoothConnection{
 
         public void run()
         {
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[4096];
             int bytes;
 
             String dupa;
@@ -445,9 +418,8 @@ public class BluetoothConnection{
                         }
                     }
                 } catch (IOException e) {
-                    //e.printStackTrace();
-                    //Toast.makeText(activityContext, "Co jest nie tak z odbiorem", Toast.LENGTH_LONG).show();
-                    //break;
+                    mHandler.obtainMessage(Constants.MESSAGE_REMOTE_DEV_DISCONNECTED).sendToTarget();
+                    break;
                 }
             }
         }

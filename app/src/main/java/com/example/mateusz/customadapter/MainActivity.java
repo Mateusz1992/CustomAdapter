@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 
 //import android.support.v4.app.FragmentActivity;
+import android.content.res.Configuration;
 import android.os.Bundle;
 
 import android.view.LayoutInflater;
@@ -52,11 +53,20 @@ public class MainActivity extends Activity {
 
     List<String> listOfSentMessages = new ArrayList<String>();
 
-    // Constants that indicate the current connection state
-   /* public static final int STATE_NONE = 0;       // we're doing nothing
-    public static final int STATE_LISTEN = 1;     // now listening for incoming connections
-    public static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
-    public static final int STATE_CONNECTED = 3;  // now connected to a remote device*/
+
+    /*@Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        setListLayout();
+    }*/
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        unregisterReceiver(mReceiver);
+    }
 
     public final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
@@ -95,7 +105,7 @@ public class MainActivity extends Activity {
 
 
                 if (bluetoothAdapter == null) {
-                    Toast.makeText(MainActivity.this, "There is no bluetooth in this mobile", Toast.LENGTH_LONG);
+                    Toast.makeText(MainActivity.this, "There is no bluetooth in this mobile", Toast.LENGTH_LONG).show();
                 }
 
                 if (!bluetoothAdapter.isEnabled()) {
@@ -120,7 +130,7 @@ public class MainActivity extends Activity {
                             device_paired.chapterDescription = "\nPaired ";
                             bluetoothDevicesList.add(device_paired);
                         }
-                        Toast.makeText(MainActivity.this, "PairedDevices", Toast.LENGTH_LONG).show();
+                        //Toast.makeText(MainActivity.this, "PairedDevices", Toast.LENGTH_LONG).show();
                         setListLayout();
                     }
 
@@ -142,7 +152,7 @@ public class MainActivity extends Activity {
 
     public void setListLayout() {
 
-       final CodeLearnAdapter chapterListAdapter = new CodeLearnAdapter();
+        final CodeLearnAdapter chapterListAdapter = new CodeLearnAdapter();
         codeLearnLessons = (ListView) findViewById(R.id.listView1);
         codeLearnLessons.setAdapter(chapterListAdapter);
 
@@ -162,7 +172,7 @@ public class MainActivity extends Activity {
                     if (chapter.chapterName.equals(device.getName() + "\n" + device.getAddress())) {
                         tmpDevice = device;
                         found1 = true;
-                        Toast.makeText(MainActivity.this, "Znaleziono", Toast.LENGTH_LONG).show();
+                        //Toast.makeText(MainActivity.this, "Znaleziono", Toast.LENGTH_LONG).show();
                         //connection = new BluetoothConnection(bluetoothAdapter, tmpDevice);
                         //connection = new BluetoothConnection(mHandler, bluetoothAdapter, tmpDevice, MainActivity.this);
                         break;
@@ -182,7 +192,7 @@ public class MainActivity extends Activity {
 
                         }
                     }*/
-                    Toast.makeText(MainActivity.this, "MainActivity11", Toast.LENGTH_SHORT).show();
+                   // Toast.makeText(MainActivity.this, "MainActivity11", Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(MainActivity.this, ChosenDevice.class);
                     //Bundle bAdapter = new Bundle();
                     //bAdapter.putParcelable("adapter", tmpDevice);

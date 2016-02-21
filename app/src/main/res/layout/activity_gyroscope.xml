@@ -8,24 +8,11 @@
     android:weightSum="100" >
 
     <LinearLayout
-        android:id="@+id/Graph"
+        android:id="@+id/GraphGyro"
         android:layout_width="fill_parent"
         android:layout_height="match_parent"
         android:orientation="horizontal"
         android:layout_weight="15">
-
-
-       <!-- <com.jjoe64.graphview.GraphView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/graph" />-->
-       <!-- <ListView
-            android:id="@+id/Lista"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_alignParentBottom="true"
-            android:layout_centerHorizontal="true" >
-        </ListView>-->
     </LinearLayout>
 
     <LinearLayout

@@ -1,18 +1,11 @@
 package com.example.mateusz.customadapter;
 
-//import android.app.FragmentManager;
-import android.app.FragmentManager;
-import android.bluetooth.BluetoothAdapter;
+
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
 import android.os.CountDownTimer;
-import android.os.Handler;
-import android.os.Message;
-import android.app.FragmentTransaction;
-//import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -27,7 +20,6 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import android.app.Activity;
 
 public class ChosenDevice extends Activity {
@@ -35,12 +27,9 @@ public class ChosenDevice extends Activity {
     EditText messageRx;
     static List<String> msgs;
     static Activity/*AppCompatActivity*/ thisActivity = null;
-    public BluetoothConnection connection = null;
-    BluetoothAdapter receivedBluetoothAdapter;
     BluetoothDevice receivedBluetoothDevice;
 
 
-    //Set<BluetoothDevice> pairedDevices;
     List<menuItem> sensorsList = new ArrayList<menuItem>();
     ListView menuDevices = null;
     TextView textConnection = null;
@@ -49,19 +38,6 @@ public class ChosenDevice extends Activity {
     int chosenDevice = -1;
 
 
-    /*public void setListLayout() {
-
-        final adapterMenu menuItems = new adapterMenu();
-        menuDevices = (ListView) findViewById(R.id.choosingSensor);
-        menuDevices.setAdapter(menuItems);
-
-        menuDevices.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                menuItem item = menuItems.getMenuItem(position);
-            }
-        });
-    };*/
 
     public class TurnedOnDevice
     {
@@ -159,7 +135,7 @@ public class ChosenDevice extends Activity {
         //messageRx = (EditText)findViewById(R.id.msgReceived);
 
 
-        Toast.makeText(ChosenDevice.this, "Chosen Device - onCreate()",Toast.LENGTH_SHORT).show();
+        //Toast.makeText(ChosenDevice.this, "Chosen Device - onCreate()",Toast.LENGTH_SHORT).show();
         msgs = new ArrayList<>();
 
         turnedOnDevices = new ArrayList<>();
@@ -176,105 +152,34 @@ public class ChosenDevice extends Activity {
         sensorsList.add(singleItem);
 
 
-        textConnection = (TextView)findViewById(R.id.textConnection);
-       // Bundle bundle = getIntent().getExtras();
-       // String msg = bundle.getString("key");
-
-       // msgs.add(msg);
+        //textConnection = (TextView)findViewById(R.id.textConnection);
 
         thisActivity = this;
 
 
-        receivedBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        //receivedBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         /*BluetoothConnection connection = new BluetoothConnection(mHandler, );*/
         receivedBluetoothDevice = getIntent().getExtras().getParcelable("device");
-
-
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        Toast.makeText(this, "onResume() ChosenDevice", Toast.LENGTH_LONG).show();
+        //Toast.makeText(this, "onResume() ChosenDevice", Toast.LENGTH_LONG).show();
 
-        if (connection != null) {
-            connection.stop();
-            connection = null;
-        }
+        final adapterMenu menuItems = new adapterMenu();
+        menuDevices = (ListView) findViewById(R.id.choosingSensor);
+        menuDevices.setAdapter(menuItems);
 
-        /*if (connection == null) {
-            Toast.makeText(this, "onResume() -- connection == null", Toast.LENGTH_LONG).show();
-            if ((receivedBluetoothDevice == null) || (receivedBluetoothAdapter == null)) {
-                finish();
+        menuDevices.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent intent = new Intent(ChosenDevice.this, LSM9DS1_sensor.class);
+                intent.putExtra("device", receivedBluetoothDevice);
+                startActivity(intent);
+
             }
-
-            connection = new BluetoothConnection(mHandler, receivedBluetoothAdapter, receivedBluetoothDevice, ChosenDevice.this);
-
-            if (connection == null) {
-                //Toast.makeText();
-                finish();
-            }
-            connection.connect(receivedBluetoothDevice);*/
-
-            final adapterMenu menuItems = new adapterMenu();
-            menuDevices = (ListView) findViewById(R.id.choosingSensor);
-            menuDevices.setAdapter(menuItems);
-
-            menuDevices.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
-                    /*TextView cos  = (TextView)view.findViewById(R.id.modelName);
-
-                    String cos1 = cos.toString();*/
-
-
-                    if (connection == null) {
-                        //Toast.makeText(this, "onResume() -- connection == null", Toast.LENGTH_LONG).show();
-                        if ((receivedBluetoothDevice == null) || (receivedBluetoothAdapter == null)) {
-                            finish();
-                        }
-
-                        connection = new BluetoothConnection(mHandler, receivedBluetoothAdapter, receivedBluetoothDevice, ChosenDevice.this);
-
-                        if (connection == null) {
-                            //Toast.makeText();
-                            finish();
-                        }
-
-                        chosenDevice = position;
-                        connection.connect(receivedBluetoothDevice);
-                    }
-
-                    /*if (findViewById(R.id.fragment_container) != null)
-                    {
-                        Log.d("Pełny", "TAG");
-                    }
-                    else
-                    {
-                        Log.d("Pusty", "TAG");
-                    }
-
-                    FragmentManager fragmentManager = getFragmentManager();
-
-                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
-                    //Measurements measurements = Measurements.newInstance("Siema1", "Siema2");
-
-                    fragmentTransaction.add(R.id.fragment_container, new Measurements());
-                    fragmentTransaction.commit();
-                    Toast.makeText(ChosenDevice.this, "ChosenDevice.java onResume()", Toast.LENGTH_LONG);*/
-
-                    /*menuItem item = menuItems.getMenuItem(position);
-                    Intent intent = new Intent(ChosenDevice.this, LSM9DS1_sensor.class);
-                    startActivity(intent);*/
-                    /*connection.write(item.sensorModel.getBytes());
-
-                    connection.write(item.sensorName.getBytes());*/
-
-                }
-            });
-        //}
+        });
     }
 
     @Override
@@ -282,24 +187,13 @@ public class ChosenDevice extends Activity {
     {
         super.onDestroy();
 
-        Toast.makeText(this, "onDestroy() Chosen Device1", Toast.LENGTH_LONG).show();
-        if(connection != null)
-        {
-            Toast.makeText(this, "onDestroy() Chosen Device", Toast.LENGTH_LONG).show();
-            connection.stop();
-        }
     }
 
     @Override
     public void onPause()
     {
         super.onPause();
-        Toast.makeText(this, "onPause() ChosenDevice1", Toast.LENGTH_LONG).show();
-        if(connection != null)
-        {
-            Toast.makeText(this, "onPause() ChosenDevice", Toast.LENGTH_LONG).show();
-            connection.stop();
-        }
+
     }
 
     @Override
@@ -336,85 +230,6 @@ public class ChosenDevice extends Activity {
         messageRx.setText(message);
     }
 
-
-    /**
-     * The Handler that gets information back from the BluetoothChatService
-     */
-    private final Handler mHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            //ChosenDevice activity = this.;
-            switch (msg.what) {
-                case Constants.MESSAGE_STATE_CHANGE:
-                    switch (msg.arg1) {
-                        case BluetoothConnection.STATE_CONNECTED:
-                            Toast.makeText(thisActivity, "STATE_CONNECTED - handle", Toast.LENGTH_LONG).show();
-                            //Intent intent = new Intent(thisActivity, ChosenDevice.class);
-                            //thisActivity.startActivity(intent);
-                            //Log.e(TAG, "1");
-                            break;
-                        case BluetoothConnection.STATE_CONNECTING:
-                            Toast.makeText(thisActivity, "STATE_CONNECTING - handle", Toast.LENGTH_LONG).show();
-                            textConnection.setText("Connecting....");
-                            //Log.e(TAG, "2");
-                            break;
-                        case BluetoothConnection.STATE_LISTEN:
-                            Toast.makeText(thisActivity, "STATE_LISTEN - handle", Toast.LENGTH_LONG).show();
-                            //Log.e(TAG, "3");
-                            break;
-                        case BluetoothConnection.STATE_NONE:
-                            Toast.makeText(thisActivity, "STATE_NONE - handle", Toast.LENGTH_LONG).show();
-                            //Log.e(TAG, "4");
-                            break;
-                    }
-                    break;
-                /*case Constants.MESSAGE_WRITE:
-                    byte[] writeBuf = (byte[]) msg.obj;
-                    //Toast.makeText(MainActivity.this, "MESSAGE_WRITE", Toast.LENGTH_LONG).show();
-                    break;*/
-                case Constants.MESSAGE_READ:
-                    byte[] readBuf = (byte[]) msg.obj;
-
-                    String readMessage = new String(readBuf, 0, msg.arg1);
-
-                    if(readMessage != null)
-                    {
-                        if(readMessage.equals(availableDevice.get(chosenDevice) + "OK") && (turnedOnDevices.get(chosenDevice).getIsTurnedOn() == false))
-                        {
-
-                        }
-                    }
-                    //setTextChosenDevice(readMessage);
-
-
-                    //Toast.makeText(MainActivity.this, "MESSAGE_READ", Toast.LENGTH_LONG).show();
-                    break;
-                case Constants.MESSAGE_SOCKET_ERROR:
-                    Toast.makeText(thisActivity, "MESSAGE_SOCKET_ERROR", Toast.LENGTH_LONG).show();
-                    thisActivity.finish();
-                case Constants.MESSAGE_CLOSE_SOCKET_ERROR:
-                    Toast.makeText(thisActivity, "MESSAGE_CLOSE_SOCKET_ERROR", Toast.LENGTH_LONG).show();
-                    thisActivity.finish();
-                    break;
-                case Constants.MESSAGE_BLUETOOTH_DEVICE_UNAVAILABLE:
-                    Toast.makeText(thisActivity, "Bluetooth device unavailable", Toast.LENGTH_LONG).show();
-                    chosenDevice = -1;
-                    textConnection.setText("Bluetooth device unavailable");
-                    //thisActivity.finish();
-                    break;
-                case Constants.MESSAGE_DEVICE_CONNECTED_SUCCESSFULLY:
-                    Toast.makeText(thisActivity, "Device connected successfully", Toast.LENGTH_LONG).show();
-
-                    connection.write(availableDevice.get(chosenDevice).getBytes());
-                    //thisActivity.finish();
-                    break;
-                case Constants.MESSAGE_DEVICE_NO_CHOICE:
-                    Toast.makeText(thisActivity, "You did not chosen a device", Toast.LENGTH_LONG);
-                    break;
-
-            }
-        }
-    };
 
     public class TimerThread extends Thread
     {

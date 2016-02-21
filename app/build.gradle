@@ -30,6 +30,8 @@ dependencies {
     //compile 'com.android.support:support-v4:23.0.2'
     compile 'com.android.support:support-v4:23.1.1'
     testCompile 'junit:junit:4.12'
+
+    compile 'com.jjoe64:graphview:4.0.1'
     //compile  'it.michelelacorte.elasticprogressbar:library:1.0.5'
 
 }

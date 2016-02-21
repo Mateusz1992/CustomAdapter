@@ -16,6 +16,8 @@ public interface Constants {
     public static final int MESSAGE_DEVICE_CONNECTED_SUCCESSFULLY = 9;
     public static final int MESSAGE_DEVICE_NO_CHOICE = 10;
     public static final int MESSAGE_CHOSEN_DEVICE = 11;
+    public static final int MESSAGE_INPUT_OUTPUT_STREAM_UNAVAILABLE = 12;
+    public static final int MESSAGE_REMOTE_DEV_DISCONNECTED = 13;
     //public static final int MESSAGE_DEVICE_CONN = 11;
 
     // Key names received from the BluetoothChatService Handler
