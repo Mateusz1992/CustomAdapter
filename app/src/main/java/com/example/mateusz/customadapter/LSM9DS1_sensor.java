@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class LSM9DS1_sensor extends Activity implements View.OnClickListener {
+public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
 
     //toggle Button
     static boolean Lock;//whether lock the x-axis to 0-5
@@ -80,7 +81,7 @@ public class LSM9DS1_sensor extends Activity implements View.OnClickListener {
 
     static Activity/*AppCompatActivity*/ thisActivity = null;
     public BluetoothConnection connection = null;
-    BluetoothAdapter receivedBluetoothAdapter;
+    BluetoothAdapter receivedBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     BluetoothDevice receivedBluetoothDevice;
     String moja;
 
@@ -104,41 +105,65 @@ public class LSM9DS1_sensor extends Activity implements View.OnClickListener {
         }
     };
 
-
+    /*public LSM9DS1_sensor(BluetoothAdapter bAdapter, BluetoothDevice bDevice)
+    {
+        receivedBluetoothAdapter = bAdapter;
+        receivedBluetoothDevice = bDevice;
+    }*/
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         //setContentView(R.layout.activity_lsm9_ds1_sensor);
 
-        this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-        requestWindowFeature(Window.FEATURE_NO_TITLE);//Hide title
+        /*this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
         this.getWindow().setFlags(WindowManager.LayoutParams.
-                FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);//Hide Status bar
-        setContentView(R.layout.activity_lsm9_ds1_sensor);
+                FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        setContentView(R.layout.activity_lsm9_ds1_sensor);*/
 
-        RightLayout = (LinearLayout)findViewById(R.id.LL2);
-        RightLayout.setBackgroundColor(Color.BLACK);
-        init();
-        ButtonInit();
 
-        thisActivity = this;
 
-        receivedBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        receivedBluetoothDevice = getIntent().getExtras().getParcelable("device");
+        /*receivedBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        receivedBluetoothDevice = getIntent().getExtras().getParcelable("device");*/
 
     }
 
 
-    public void init()
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        ((ChosenDevice) activity).onSectionAttached(
+                getArguments().getInt(ChosenDevice.ARG_SECTION_NUMBER));
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState)
+    {
+        View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+
+        RightLayout = (LinearLayout)rootView.findViewById(R.id.LL2);
+        RightLayout.setBackgroundColor(Color.BLACK);
+
+        init(rootView);
+        ButtonInit(rootView);
+
+        receivedBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        receivedBluetoothDevice = (BluetoothDevice)getArguments().getParcelable("device");
+
+        return rootView;
+    }
+
+    public void init(View rootView)
     {
         //init graphview
-        GraphView = (LinearLayout) findViewById(R.id.Graph);
+        GraphView = (LinearLayout) rootView.findViewById(R.id.Graph);
         //GraphView.setBackgroundColor(Color.BLACK);
 
         GraphView.setBackgroundColor(Color.BLACK);
 
-        graphView = new GraphView(this);//(GraphView)findViewById(R.id.graph);
+        graphView = /*new GraphView(this);*/(GraphView)rootView.findViewById(R.id.graph);
 
         graphView.setDrawingCacheEnabled(true);
         graphView.setBackgroundColor(Color.BLACK);
@@ -165,17 +190,17 @@ public class LSM9DS1_sensor extends Activity implements View.OnClickListener {
         Series.setColor(Color.RED);
         Series.setThickness(2);*/
 
-        SeriesX = new LineGraphSeries<DataPoint>(new DataPoint[]{new DataPoint(0,0)});
+        SeriesX = new LineGraphSeries<DataPoint>(new DataPoint[]{new DataPoint(0, 0)});
         SeriesX.setTitle("X accel");
         SeriesX.setColor(Color.RED);
         SeriesX.setThickness(2);
 
-        SeriesY = new LineGraphSeries<DataPoint>(new DataPoint[]{new DataPoint(0,0)});
+        SeriesY = new LineGraphSeries<DataPoint>(new DataPoint[]{new DataPoint(0, 0)});
         SeriesY.setTitle("Y accel");
         SeriesY.setColor(Color.BLUE);
         SeriesY.setThickness(2);
 
-        SeriesZ = new LineGraphSeries<DataPoint>(new DataPoint[]{new DataPoint(0,0)});
+        SeriesZ = new LineGraphSeries<DataPoint>(new DataPoint[]{new DataPoint(0, 0)});
         SeriesZ.setTitle("Z accel");
         SeriesZ.setColor(Color.GREEN);
         SeriesZ.setThickness(2);
@@ -203,28 +228,28 @@ public class LSM9DS1_sensor extends Activity implements View.OnClickListener {
         graphView.addSeries(SeriesZ);
 
 
-        GraphView.addView(graphView);
+//        GraphView.addView(graphView);
         //graphView.getViewport()
 
     }
 
 
-    void ButtonInit(){
-        bConnect = (Button)findViewById(R.id.bConnect);
+    void ButtonInit(View rootView){
+        bConnect = (Button)rootView.findViewById(R.id.bConnect);
         bConnect.setOnClickListener(this);
-        bDisconnect = (Button)findViewById(R.id.bDisconnect);
+        bDisconnect = (Button)rootView.findViewById(R.id.bDisconnect);
         bDisconnect.setOnClickListener(this);
         //X-axis control button
-        bXminus = (Button)findViewById(R.id.bXminus);
+        bXminus = (Button)rootView.findViewById(R.id.bXminus);
         bXminus.setOnClickListener(this);
-        bXplus = (Button)findViewById(R.id.bXplus);
+        bXplus = (Button)rootView.findViewById(R.id.bXplus);
         bXplus.setOnClickListener(this);
         //
-        tbLock = (ToggleButton)findViewById(R.id.tbLock);
+        tbLock = (ToggleButton)rootView.findViewById(R.id.tbLock);
         tbLock.setOnClickListener(this);
-        tbScroll = (ToggleButton)findViewById(R.id.tbScroll);
+        tbScroll = (ToggleButton)rootView.findViewById(R.id.tbScroll);
         tbScroll.setOnClickListener(this);
-        tbStream = (ToggleButton)findViewById(R.id.tbStream);
+        tbStream = (ToggleButton)rootView.findViewById(R.id.tbStream);
         tbStream.setOnClickListener(this);
         //init toggleButton
         Lock=true;
@@ -244,14 +269,14 @@ public class LSM9DS1_sensor extends Activity implements View.OnClickListener {
         {
             if ((receivedBluetoothDevice == null) || (receivedBluetoothAdapter == null))
             {
-                finish();
+                //finish();
             }
 
             connection = new BluetoothConnection(mHandler, receivedBluetoothAdapter, receivedBluetoothDevice);
 
             if(connection == null)
             {
-                finish();
+                //finish();
             }
             connection.connect(receivedBluetoothDevice);
         }
@@ -277,7 +302,7 @@ public class LSM9DS1_sensor extends Activity implements View.OnClickListener {
     }
 
     @Override
-    protected void onPause() {
+    public void onPause() {
         super.onPause();
         //Toast.makeText(this, "onPause() ChosenDevice1", Toast.LENGTH_LONG).show();
         if(connection != null)
@@ -299,17 +324,17 @@ public class LSM9DS1_sensor extends Activity implements View.OnClickListener {
                 case Constants.MESSAGE_STATE_CHANGE:
                     switch (msg.arg1) {
                         case BluetoothConnection.STATE_CONNECTED:
-                            Toast.makeText(thisActivity, "STATE_CONNECTED - handle", Toast.LENGTH_LONG).show();
+                            Toast.makeText(GraphView.getContext(), "STATE_CONNECTED - handle", Toast.LENGTH_LONG).show();
                             break;
                         case BluetoothConnection.STATE_CONNECTING:
-                            Toast.makeText(thisActivity, "STATE_CONNECTING - handle", Toast.LENGTH_LONG).show();
+                            Toast.makeText(GraphView.getContext(), "STATE_CONNECTING - handle", Toast.LENGTH_LONG).show();
                             break;
                         case BluetoothConnection.STATE_LISTEN:
-                            Toast.makeText(thisActivity, "STATE_LISTEN - handle", Toast.LENGTH_LONG).show();
+                            Toast.makeText(GraphView.getContext(), "STATE_LISTEN - handle", Toast.LENGTH_LONG).show();
                             //Log.e(TAG, "3");
                             break;
                         case BluetoothConnection.STATE_NONE:
-                            Toast.makeText(thisActivity, "STATE_NONE - handle", Toast.LENGTH_LONG).show();
+                            Toast.makeText(GraphView.getContext(), "STATE_NONE - handle", Toast.LENGTH_LONG).show();
                             //Log.e(TAG, "4");
                             break;
                     }
@@ -567,25 +592,25 @@ public class LSM9DS1_sensor extends Activity implements View.OnClickListener {
                     thisActivity.finish();
                     break;
                 case Constants.MESSAGE_BLUETOOTH_DEVICE_UNAVAILABLE:
-                    Toast.makeText(thisActivity, "Bluetooth device unavailable", Toast.LENGTH_LONG).show();
+                    Toast.makeText(GraphView.getContext(), "Bluetooth device unavailable", Toast.LENGTH_LONG).show();
                     //chosenDevice = -1;
                     //textConnection.setText("Bluetooth device unavailable");
                     //thisActivity.finish();
                     break;
                 case Constants.MESSAGE_DEVICE_CONNECTED_SUCCESSFULLY:
-                    Toast.makeText(thisActivity, "Device connected successfully", Toast.LENGTH_LONG).show();
+                    Toast.makeText(GraphView.getContext(), "Device connected successfully", Toast.LENGTH_LONG).show();
 
                    // connection.write(availableDevice.get(chosenDevice).getBytes());
                     //thisActivity.finish();
                     break;
                 case Constants.MESSAGE_DEVICE_NO_CHOICE:
-                    Toast.makeText(thisActivity, "You did not chosen a device", Toast.LENGTH_LONG).show();
+                    Toast.makeText(GraphView.getContext(), "You did not chosen a device", Toast.LENGTH_LONG).show();
                     break;
                 case Constants.MESSAGE_INPUT_OUTPUT_STREAM_UNAVAILABLE:
-                    Toast.makeText(thisActivity, "I/O stream unavailable", Toast.LENGTH_LONG).show();
+                    Toast.makeText(GraphView.getContext(), "I/O stream unavailable", Toast.LENGTH_LONG).show();
                     break;
                 case Constants.MESSAGE_REMOTE_DEV_DISCONNECTED:
-                    Toast.makeText(thisActivity, "Remote device disconnected", Toast.LENGTH_LONG).show();
+                    Toast.makeText(GraphView.getContext(), "Remote device disconnected", Toast.LENGTH_LONG).show();
                     break;
             }
         }
