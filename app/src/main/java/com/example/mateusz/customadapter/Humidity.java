@@ -2,7 +2,6 @@ package com.example.mateusz.customadapter;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -11,6 +10,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -27,7 +27,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
-import com.jjoe64.graphview.*;
+
+import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.LegendRenderer;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
@@ -36,7 +38,7 @@ import java.util.List;
 import java.util.Set;
 
 
-public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
+public class Humidity  extends Fragment implements View.OnClickListener {
 
     public final int REQUEST_ENABLE_BT = 1;
     private boolean turnedOn = false;
@@ -63,7 +65,6 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
     static DataPoint[] valuesZ = new DataPoint[100];
 
     List<BtDevice> bluetoothDevicesList = new ArrayList<>();
-    static List<String> readChars = new ArrayList<>();
 
     //Button init
     Button bXminus;
@@ -75,7 +76,7 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
     //GraphView init
     static LinearLayout GraphView;
     static LinearLayout RightLayout;
-    static GraphView graphView;
+    static com.jjoe64.graphview.GraphView graphView;
     static LineGraphSeries Series;
     static LineGraphSeries SeriesX;
     static LineGraphSeries SeriesY;
@@ -202,7 +203,7 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
                     //setListLayout();
                 }
 
-                if(receivedBluetoothAdapter.startDiscovery()) //szukaj urz¹dzeñ
+                if(receivedBluetoothAdapter.startDiscovery()) //szukaj urzÄ…dzeÅ„
                 {
                     IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
                     getContext().registerReceiver(mReceiver, filter);
@@ -265,7 +266,7 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
         ButtonInit(rootView);
 
         receivedBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-       // receivedBluetoothDevice = (BluetoothDevice)getArguments().getParcelable("device");
+        // receivedBluetoothDevice = (BluetoothDevice)getArguments().getParcelable("device");
 
         return rootView;
     }
@@ -278,14 +279,14 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
 
         GraphView.setBackgroundColor(Color.BLACK);
 
-        graphView = /*new GraphView(this);*/(GraphView)rootView.findViewById(R.id.graph);
+        graphView = /*new GraphView(this);*/(com.jjoe64.graphview.GraphView)rootView.findViewById(R.id.graph);
 
         graphView.setDrawingCacheEnabled(true);
         graphView.setBackgroundColor(Color.BLACK);
 
 
         graphView.getGridLabelRenderer().setGridColor(Color.WHITE);
-        graphView.getGridLabelRenderer().setVerticalAxisTitle("Acceleration [g]");
+        graphView.getGridLabelRenderer().setVerticalAxisTitle("Relative humidity [%]");
         graphView.getGridLabelRenderer().setVerticalAxisTitleColor(Color.WHITE);
 
         graphView.getGridLabelRenderer().setHorizontalLabelsColor(Color.WHITE);
@@ -297,7 +298,7 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
         graphView.getGridLabelRenderer().reloadStyles();
         //graphView.getGridLabelRenderer().draw();
 
-        graphView.setTitle("Graph - acceleration in 3D: x, y, z");
+        graphView.setTitle("Relative humidity");
         graphView.setTitleColor(Color.WHITE);
 
         /*Series = new LineGraphSeries<DataPoint>(new DataPoint[]{new DataPoint(0,0)});
@@ -306,17 +307,19 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
         Series.setThickness(2);*/
 
         SeriesX = new LineGraphSeries<DataPoint>(new DataPoint[]{new DataPoint(0, 0)});
-        SeriesX.setTitle("X accel");
+        SeriesX.setTitle("X - magnetic flux");
         SeriesX.setColor(Color.RED);
         SeriesX.setThickness(2);
+        /*SeriesX.setDrawDataPoints(true);
+        SeriesX.setDataPointsRadius(10);*/
 
         SeriesY = new LineGraphSeries<DataPoint>(new DataPoint[]{new DataPoint(0, 0)});
-        SeriesY.setTitle("Y accel");
+        SeriesY.setTitle("Y - magnetic flux");
         SeriesY.setColor(Color.BLUE);
         SeriesY.setThickness(2);
 
         SeriesZ = new LineGraphSeries<DataPoint>(new DataPoint[]{new DataPoint(0, 0)});
-        SeriesZ.setTitle("Z accel");
+        SeriesZ.setTitle("Z - magnetic flux");
         SeriesZ.setColor(Color.GREEN);
         SeriesZ.setThickness(2);
 
@@ -337,7 +340,7 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
         graphView.getViewport().setMinY(-5);
         graphView.getViewport().setMaxY(5);
 
-       // graphView.addSeries(Series);
+        // graphView.addSeries(Series);
         graphView.addSeries(SeriesX);
         graphView.addSeries(SeriesY);
         graphView.addSeries(SeriesZ);
@@ -463,7 +466,7 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
 
                     String readMessage = new String(readBuf, 0, msg.arg1);
                     //char[] readMessage1 = readMessage.toCharArray();
-                    readChars.add(readMessage);
+
                     if(readMessage != null)
                     {
 
@@ -483,8 +486,10 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
 
                                 if(isFloatNumber(readMessage))
                                 {
-                                    double d = parseFloat(readMessage); //= (double)Integer.parseInt(readMessage);
-                                    if(d == -0.00) d = 0.00;
+                                    //double d = (double)Integer.parseInt(readMessage);
+                                    double d = parseFloat(readMessage);
+                                    if(-0.00 == d) d = 0.00;
+
                                     /*if(isMinusX)
                                     {
                                         d = d * (-1);
@@ -561,7 +566,7 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
                                 {
                                     //double d = (double)Integer.parseInt(readMessage);
                                     double d = parseFloat(readMessage);
-
+                                    if(-0.00 == d) d = 0.00;
                                     /*if(isMinusY)
                                     {
                                         d = d * (-1);
@@ -635,15 +640,11 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
                                 if(isFloatNumber(readMessage))
                                 {
                                     //double d = (double)Integer.parseInt(readMessage);
-
                                     double d = parseFloat(readMessage);
+                                    if(-0.00 == d) d = 0.00;
 
-                                    /*if(d == 0)
-                                    {
-                                        System.out.print("Jest zero");
-                                    }
 
-                                    if(isMinusZ)
+                                    /*if(isMinusZ)
                                     {
                                         d = d * (-1);
                                         valuesZ[ileRazyZ] = new DataPoint(graph2LastXValueZ, d);
@@ -703,13 +704,14 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
                         try
                         {
                             Thread.sleep(4);
-                        } catch (InterruptedException e) {
+                        }
+                        catch (InterruptedException e)
+                        {
                             e.printStackTrace();
                         }
                         GraphView.removeView(graphView);
                         GraphView.addView(graphView);
                     }
-
                     break;
                 case Constants.MESSAGE_SOCKET_ERROR:
                     Toast.makeText(GraphView.getContext(), "MESSAGE_SOCKET_ERROR", Toast.LENGTH_LONG).show();
@@ -728,7 +730,7 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
                 case Constants.MESSAGE_DEVICE_CONNECTED_SUCCESSFULLY:
                     Toast.makeText(GraphView.getContext(), "Device connected successfully", Toast.LENGTH_LONG).show();
 
-                   // connection.write(availableDevice.get(chosenDevice).getBytes());
+                    // connection.write(availableDevice.get(chosenDevice).getBytes());
                     //thisActivity.finish();
                     break;
                 case Constants.MESSAGE_DEVICE_NO_CHOICE:
@@ -838,8 +840,8 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
             case R.id.tbStream:
                 //if (tbStream.isChecked())
                 //{
-                    if (connection != null)
-                        connection.write("LSM9DS1".getBytes());
+                if (connection != null)
+                    connection.write("Magnetometer".getBytes());
                 //}
                 /*else{
                     if (connection != null)
@@ -957,7 +959,7 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
 
             AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
             AlertDialog dialog;
-            builder.setTitle("Chooose device");
+            builder.setTitle("Choose device");
 
             LinearLayout dialogLayout = new LinearLayout(getContext());
             ListView lView = new ListView(getContext());
@@ -974,8 +976,8 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
 
             //if(huj == 0)
             //{
-                dialogLayout.addView(lView);
-                huj++;
+            dialogLayout.addView(lView);
+            huj++;
             //}
 
             builder.setCancelable(true);

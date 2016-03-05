@@ -15,6 +15,9 @@ import android.util.Log;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -23,6 +26,7 @@ import java.util.UUID;
 public class BluetoothConnection{
 
     private static final String TAG = "BluetoothConnection";
+    private static final int DELAY = 0;
     public ConnectThread mConnectThread;
     public ConnectedThread mConnectedThread;
     public int mState;
@@ -40,7 +44,7 @@ public class BluetoothConnection{
     public BluetoothDevice connectedDevice = null;
     private String chosen_sensor;
 
-
+    static List<String> readChars = new ArrayList<>();
 
 
 
@@ -248,6 +252,7 @@ public class BluetoothConnection{
         if(mConnectedThread != null)
         {
             mConnectedThread.start();
+            mConnectedThread.setPriority(Thread.MIN_PRIORITY);
         }
 
     }
@@ -291,7 +296,9 @@ public class BluetoothConnection{
 
         public void run()
         {
-            bluetoothAdapter.cancelDiscovery();
+            if(bluetoothAdapter.isDiscovering()){
+                bluetoothAdapter.cancelDiscovery();
+            }
 
             try
             {
@@ -371,6 +378,8 @@ public class BluetoothConnection{
             InputStream tmpIn = null;
             OutputStream tmpOut = null;
 
+
+
             try
             {
 
@@ -393,6 +402,11 @@ public class BluetoothConnection{
 
         public void run()
         {
+
+            if(bluetoothAdapter.isDiscovering()){
+                bluetoothAdapter.cancelDiscovery();
+            }
+
             byte[] buffer = new byte[4096];
             int bytes;
 
@@ -405,7 +419,7 @@ public class BluetoothConnection{
                     {
                         bytes = inStream.available();
 
-                        if(bytes > 0)
+                        if(bytes > 0/* && bytes <= 200*/)
                         {
                             byte[] pocketBytes = new byte[bytes];
                             inStream.read(pocketBytes);
@@ -414,13 +428,48 @@ public class BluetoothConnection{
                             dupa = pocketBytes.toString();
                             System.out.println(dupa);
 
+                            /*if(!dupa.contains("]"))
+                            {
+                                readChars.add(dupa);
+                            }
+                            else
+                            {
+                                readChars.add(dupa);
+
+                                String m = "";
+                                Iterator<String> iter = readChars.iterator();
+                                StringBuilder sb = new StringBuilder();
+
+                                if (iter.hasNext()) {
+                                    sb.append(iter.next());
+                                    while (iter.hasNext()) {
+                                        sb.append("").append(iter.next());
+                                    }
+                                }
+                                m = sb.toString();
+                            }*/
+
                             mHandler.obtainMessage(MESSAGE_READ, bytes, -1, pocketBytes).sendToTarget();
+
+                            try
+                            {
+                                Thread.sleep(DELAY);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                 } catch (IOException e) {
                     mHandler.obtainMessage(Constants.MESSAGE_REMOTE_DEV_DISCONNECTED).sendToTarget();
                     break;
                 }
+
+                /*try
+                {
+                    Thread.sleep(250);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }*/
             }
         }
 

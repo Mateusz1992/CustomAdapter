@@ -4,6 +4,7 @@ package com.example.mateusz.customadapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.CountDownTimer;
 import android.os.Bundle;
@@ -193,6 +194,7 @@ public class ChosenDevice extends ActionBarActivity implements NavigationDrawerF
     @Override
     public void onResume() {
         super.onResume();
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         //Toast.makeText(this, "onResume() ChosenDevice", Toast.LENGTH_LONG).show();
 
         /*final adapterMenu menuItems = new adapterMenu();
@@ -311,18 +313,53 @@ public class ChosenDevice extends ActionBarActivity implements NavigationDrawerF
         Fragment fragment;
         if (sectionNumber == 0) {
             fragment = new LSM9DS1_sensor();
-            Bundle args = new Bundle();
-            receivedBluetoothDevice = getIntent().getExtras().getParcelable("device");
+            //Bundle args = new Bundle();
+            /*receivedBluetoothDevice = getIntent().getExtras().getParcelable("device");
             args.putParcelable("device", receivedBluetoothDevice);
             //args.putLong("key", value);
-            fragment.setArguments(args);
+            fragment.setArguments(args);*/
 
-        } else {
+        }
+        else if(sectionNumber == 1)
+        {
+            fragment = new Gyroscope();
+            //fragment.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+            //Bundle args = new Bundle();
+            //receivedBluetoothDevice = getIntent().getExtras().getParcelable("device");
+            //args.putParcelable("device", receivedBluetoothDevice);
+            //args.putLong("key", value);
+            //fragment.setArguments(args);
+        }
+        else if(sectionNumber == 2)
+        {
+            fragment = new Magnetometer();
+        }
+        else if(sectionNumber == 3)
+        {
+            fragment = new Temperature_sensor();
+        }
+        else if(sectionNumber == 4)
+        {
+            fragment = new Infineon_magnetometer();
+        }
+        else if(sectionNumber == 5)
+        {
+            fragment = new Humidity();
+        }
+        else if(sectionNumber == 6)
+        {
+            fragment = new Distance_sensor();
+        }
+        else if(sectionNumber == 7)
+        {
+            fragment = new All_Sensors();
+        }
+        else {
             throw new IllegalStateException("unknown section "+sectionNumber);
         }
-        /*Bundle args = new Bundle();
+        Bundle args = new Bundle();
         args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-        fragment.setArguments(args);*/
+        fragment.setArguments(args);
         return fragment;
 
     }
@@ -341,6 +378,24 @@ public class ChosenDevice extends ActionBarActivity implements NavigationDrawerF
                 break;
             case 1:
                 mTitle = getString(R.string.gyro_fragment);
+                break;
+            case 2:
+                mTitle = getString(R.string.magnetometer_fragment);
+                break;
+            case 3:
+                mTitle = "Temperature";
+                break;
+            case 4:
+                mTitle = "Magnetometer Infineon";
+                break;
+            case 5:
+                mTitle = "Humidity";
+                break;
+            case 6:
+                mTitle = "Distance sensor";
+                break;
+            case 7:
+                mTitle = "All sensors";
                 break;
         }
     }
