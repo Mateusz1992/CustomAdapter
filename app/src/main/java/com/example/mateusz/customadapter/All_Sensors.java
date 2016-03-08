@@ -38,6 +38,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.StringBufferInputStream;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -184,6 +185,9 @@ public class All_Sensors  extends Fragment implements View.OnClickListener {
     BluetoothAdapter receivedBluetoothAdapter;
     static BluetoothDevice receivedBluetoothDevice;
 
+    private final MyHandler mHandler = new MyHandler(this);
+
+
     static final int DELAY = 0;
     static final double STEP = 0.1;
     static final int MAX_X = 10;
@@ -202,6 +206,43 @@ public class All_Sensors  extends Fragment implements View.OnClickListener {
 
     static boolean canI = true;
 
+
+    public void resetVariables()
+    {
+        //reset x coordinates of plots
+        graph2LastXValueX = 0;
+        graph2LastXValueY = 0;
+        graph2LastXValueZ = 0;
+
+        graph2LastXValueXG = 0;
+        graph2LastXValueYG = 0;
+        graph2LastXValueZG = 0;
+
+        graph2LastXValueXM = 0;
+        graph2LastXValueYM = 0;
+        graph2LastXValueZM = 0;
+
+        graph2LastXValueT = 0;
+        graph2LastXValueH = 0;
+        //reset x coordinates of plots
+
+        //reset array indices
+        ileRazyX = 0;
+        ileRazyY = 0;
+        ileRazyZ = 0;
+
+        ileRazyXG = 0;
+        ileRazyYG = 0;
+        ileRazyZG = 0;
+
+        ileRazyXM = 0;
+        ileRazyYM = 0;
+        ileRazyZM = 0;
+
+        ileRazyT = 0;
+        ileRazyH = 0;
+        //reset array indices
+    }
 
     public final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
@@ -577,7 +618,15 @@ public class All_Sensors  extends Fragment implements View.OnClickListener {
     /**
      * The Handler that gets information back from the BluetoothChatService
      */
-    private static Handler mHandler = new Handler(Looper.getMainLooper()) {
+    /*private Handler mHandler = new Handler(Looper.getMainLooper())*/
+    private static class MyHandler extends Handler
+    {
+        private final WeakReference<All_Sensors> fragment;
+
+        public MyHandler(All_Sensors f) {
+            fragment = new WeakReference<All_Sensors>(f);
+        }
+
         @Override
         public void handleMessage(Message msg) {
             //ChosenDevice activity = this.;
@@ -605,7 +654,7 @@ public class All_Sensors  extends Fragment implements View.OnClickListener {
 
                     if(canI)
                     {
-                        String readMessage = new String(readBuf, 0, msg.arg1);
+                        final String readMessage = new String(readBuf, 0, msg.arg1);
                         //char[] readMessage1 = readMessage.toCharArray();
 
                         if(!readMessage.contains("]"))
@@ -619,7 +668,7 @@ public class All_Sensors  extends Fragment implements View.OnClickListener {
 
                             String[] k = new String[readChars.size()];
                             k = readChars.toArray(k);
-                            String m = "";
+                            //String m = "";
 
                             Iterator<String> iter = readChars.iterator();
                             StringBuilder sb = new StringBuilder();
@@ -630,487 +679,464 @@ public class All_Sensors  extends Fragment implements View.OnClickListener {
                                     sb.append("").append(iter.next());
                                 }
                             }
-                            m = sb.toString();
+                            final String m = sb.toString();
 
-                            if(!readChars.isEmpty()) readChars.clear();
-                            try {
-                                JSONObject jsonRootObject = new JSONObject(m);
-
-                                //Get the instance of JSONArray that contains JSONObjects
-                                JSONArray jsonArray = jsonRootObject.optJSONArray("m");
-
-                                if(!mrs.isEmpty())
-                                {
-                                    mrs.clear();
-                                }
-
-
-                                for(int i=0; i < jsonArray.length(); i++){
-                                    JSONObject jsonObject = jsonArray.getJSONObject(i);
-
-
-                                    String id = jsonObject.optString("id").toString();
-                                    if(!(id.equals("t") || id.equals("h")))
-                                    {
-                                        float x = Float.parseFloat(jsonObject.optString("x").toString());
-                                        float y = Float.parseFloat(jsonObject.optString("y").toString());
-                                        float z = Float.parseFloat(jsonObject.optString("z").toString());
-
-                                        mrs.add(new Measurements(id,x,y,z));
-                                    }else
-                                    {
-                                        //id = "";
-                                        float x = Float.parseFloat(jsonObject.optString("x").toString());
-                                        float y = 0;
-                                        float z = 0;
-                                        mrs.add(new Measurements(id,x,y,z));
-                                    }
-                                    //String name = jsonObject.optString("name").toString();
-                                    //float salary = Float.parseFloat(jsonObject.optString("salary").toString());
-
-                                  //  data += "Node"+i+" : \n id= "+ id +" \n Name= "+ name +" \n Salary= "+ salary +" \n ";
-                                }
-                                //output.setText(data);
-                            } catch (JSONException e)
+                            if(!readChars.isEmpty())
                             {
-                                e.printStackTrace();
+                                readChars.clear();
                             }
 
-                            if(readMessage != null && !mrs.isEmpty())
+                            (new Thread(new Runnable()
                             {
-                                for(int i = 0; i < mrs.size(); i++) {
-                                    if (mrs.get(i).getId_mrs().equals("a"))
-                                    {
-                                        if (ileRazyX < ((int)(MAX_X/STEP) + 1))
-                                        {
-
-                                            valuesX[ileRazyX] = new DataPoint(graph2LastXValueX, mrs.get(i).getX() * 9.81);
-                                            SeriesXAccel.appendData(valuesX[ileRazyX], AutoScrollX, ((int)(MAX_X/STEP) + 1));
-
-                                            if (graph2LastXValueX >= Xview && Lock == true) {
-                                                SeriesXAccel.resetData(new DataPoint[]{});
-                                                graph2LastXValueX = 0;
-                                            } else graph2LastXValueX += STEP;
-
-                                            if (Lock == true) {
-                                                graphView.getViewport().setMinX(0);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            } else {
-                                                graphView.getViewport().setMinX(graph2LastXValueX - Xview);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            }
-
-                                            ileRazyX++;
-
-                                            try
-                                            {
-                                                Thread.sleep(DELAY);
-                                            } catch (InterruptedException e) {
-                                                e.printStackTrace();
-                                            }
-
-                                            /*GraphView.removeView(graphView);
-                                            GraphView.addView(graphView);*/
-                                        }
-                                        else
-                                        {
-                                            ileRazyX = 0;
-
-                                        /*GraphView.removeView(graphView);
-                                        GraphView.addView(graphView);*/
-                                        }
-
-                                        if (ileRazyY < ((int)(MAX_X/STEP) + 1))
-                                        {
-                                            valuesY[ileRazyY] = new DataPoint(graph2LastXValueY, mrs.get(i).getY() * 9.81);
-                                            SeriesYAccel.appendData(valuesY[ileRazyY], AutoScrollX, ((int)(MAX_X/STEP) + 1));
-
-                                            if (graph2LastXValueY >= Xview && Lock == true) {
-                                                SeriesYAccel.resetData(new DataPoint[]{});
-                                                graph2LastXValueY = 0;
-                                            } else graph2LastXValueY += STEP;
-
-                                            if (Lock == true) {
-                                                graphView.getViewport().setMinX(0);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            } else {
-                                                graphView.getViewport().setMinX(graph2LastXValueY - Xview);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            }
-
-                                            ileRazyY++;
-
-                                            try
-                                            {
-                                                Thread.sleep(DELAY);
-                                            } catch (InterruptedException e) {
-                                                e.printStackTrace();
-                                            }
-
-                                            /*GraphView.removeView(graphView);
-                                            GraphView.addView(graphView);*/
-                                        } else {
-                                            ileRazyY = 0;
-                                        }
-
-                                        if (ileRazyZ < ((int)(MAX_X/STEP) + 1)) {
-
-                                            valuesZ[ileRazyZ] = new DataPoint(graph2LastXValueZ, mrs.get(i).getZ() * 9.81);
-                                            SeriesZAccel.appendData(valuesZ[ileRazyZ], AutoScrollX, ((int)(MAX_X/STEP) + 1));
-
-                                            if (graph2LastXValueZ >= Xview && Lock == true) {
-                                                SeriesZAccel.resetData(new DataPoint[]{});
-                                                graph2LastXValueZ = 0;
-                                            } else graph2LastXValueZ += STEP;
-
-                                            if (Lock == true) {
-                                                graphView.getViewport().setMinX(0);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            } else {
-                                                graphView.getViewport().setMinX(graph2LastXValueZ - Xview);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            }
-
-
-                                            ileRazyZ++;
-
-                                            try
-                                            {
-                                                Thread.sleep(DELAY);
-                                            } catch (InterruptedException e) {
-                                                e.printStackTrace();
-                                            }
-
-                                            /*GraphView.removeView(graphView);
-                                            GraphView.addView(graphView);*/
-                                        }
-                                        else
-                                        {
-                                            ileRazyZ = 0;
-
-                                            //GraphView.removeView(graphView);
-                                            //GraphView.addView(graphView);
-                                        }
-                                    }
-                                    else if (mrs.get(i).getId_mrs().equals("g"))
-                                    {
-                                        if (ileRazyXG < ((int)(MAX_X/STEP) + 1))
-                                        {
-
-                                            valuesXG[ileRazyXG] = new DataPoint(graph2LastXValueXG, mrs.get(i).getX());
-                                            SeriesXGyro.appendData(valuesXG[ileRazyXG], AutoScrollX, ((int)(MAX_X/STEP) + 1));
-
-                                            if (graph2LastXValueXG >= Xview && Lock == true) {
-                                                SeriesXGyro.resetData(new DataPoint[]{});
-                                                graph2LastXValueXG = 0;
-                                            } else graph2LastXValueXG += STEP;
-
-                                            if (Lock == true) {
-                                                graphView.getViewport().setMinX(0);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            } else {
-                                                graphView.getViewport().setMinX(graph2LastXValueXG - Xview);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            }
-
-                                            ileRazyXG++;
-
-                                            try
-                                            {
-                                                Thread.sleep(DELAY);
-                                            } catch (InterruptedException e) {
-                                                e.printStackTrace();
-                                            }
-
-                                            /*GraphView.removeView(graphView);
-                                            GraphView.addView(graphView);*/
-                                        }
-                                        else
-                                        {
-                                            ileRazyXG = 0;
-
-                                        /*GraphView.removeView(graphView);
-                                        GraphView.addView(graphView);*/
-                                        }
-
-                                        if (ileRazyYG < ((int)(MAX_X/STEP) + 1))
-                                        {
-                                            valuesYG[ileRazyYG] = new DataPoint(graph2LastXValueYG, mrs.get(i).getY());
-                                            SeriesYGyro.appendData(valuesYG[ileRazyYG], AutoScrollX, ((int)(MAX_X/STEP) + 1));
-
-                                            if (graph2LastXValueYG >= Xview && Lock == true) {
-                                                SeriesYGyro.resetData(new DataPoint[]{});
-                                                graph2LastXValueYG = 0;
-                                            } else graph2LastXValueYG += STEP;
-
-                                            if (Lock == true) {
-                                                graphView.getViewport().setMinX(0);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            } else {
-                                                graphView.getViewport().setMinX(graph2LastXValueYG - Xview);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            }
-
-                                            ileRazyYG++;
-
-                                            try
-                                            {
-                                                Thread.sleep(DELAY);
-                                            } catch (InterruptedException e) {
-                                                e.printStackTrace();
-                                            }
-
-                                            /*GraphView.removeView(graphView);
-                                            GraphView.addView(graphView);*/
-                                        } else {
-                                            ileRazyYG = 0;
-                                        }
-
-                                        if (ileRazyZG < ((int)(MAX_X/STEP) + 1)) {
-
-                                            valuesZG[ileRazyZG] = new DataPoint(graph2LastXValueZG, mrs.get(i).getZ());
-                                            SeriesZGyro.appendData(valuesZG[ileRazyZG], AutoScrollX, ((int)(MAX_X/STEP) + 1));
-
-                                            if (graph2LastXValueZG >= Xview && Lock == true) {
-                                                SeriesZGyro.resetData(new DataPoint[]{});
-                                                graph2LastXValueZG = 0;
-                                            } else graph2LastXValueZG += STEP;
-
-                                            if (Lock == true) {
-                                                graphView.getViewport().setMinX(0);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            } else {
-                                                graphView.getViewport().setMinX(graph2LastXValueZG - Xview);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            }
-
-
-                                            ileRazyZG++;
-
-                                            try
-                                            {
-                                                Thread.sleep(DELAY);
-                                            } catch (InterruptedException e) {
-                                                e.printStackTrace();
-                                            }
-
-                                            /*GraphView.removeView(graphView);
-                                            GraphView.addView(graphView);*/
-                                        }
-                                        else
-                                        {
-                                            ileRazyZG = 0;
-
-                                            //GraphView.removeView(graphView);
-                                            //GraphView.addView(graphView);
-                                        }
-                                    }
-                                    else if (mrs.get(i).getId_mrs().equals("m"))
-                                    {
-                                        if (ileRazyXM < ((int)(MAX_X/STEP) + 1))
-                                        {
-
-                                            valuesXM[ileRazyXM] = new DataPoint(graph2LastXValueXM, mrs.get(i).getX());
-                                            SeriesXMagn.appendData(valuesXM[ileRazyXM], AutoScrollX, ((int)(MAX_X/STEP) + 1));
-
-                                            if (graph2LastXValueXM >= Xview && Lock == true) {
-                                                SeriesXMagn.resetData(new DataPoint[]{});
-                                                graph2LastXValueXM = 0;
-                                            } else graph2LastXValueXM += STEP;
-
-                                            if (Lock == true) {
-                                                graphView.getViewport().setMinX(0);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            } else {
-                                                graphView.getViewport().setMinX(graph2LastXValueXM - Xview);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            }
-
-                                            ileRazyXM++;
-
-                                            try
-                                            {
-                                                Thread.sleep(DELAY);
-                                            } catch (InterruptedException e) {
-                                                e.printStackTrace();
-                                            }
-
-                                            /*GraphView.removeView(graphView);
-                                            GraphView.addView(graphView);*/
-                                        }
-                                        else
-                                        {
-                                            ileRazyXM = 0;
-
-                                        /*GraphView.removeView(graphView);
-                                        GraphView.addView(graphView);*/
-                                        }
-
-                                        if (ileRazyYM < ((int)(MAX_X/STEP) + 1))
-                                        {
-                                            valuesYM[ileRazyYM] = new DataPoint(graph2LastXValueYM, mrs.get(i).getY());
-                                            SeriesYMagn.appendData(valuesYM[ileRazyYM], AutoScrollX, ((int)(MAX_X/STEP) + 1));
-
-                                            if (graph2LastXValueYM >= Xview && Lock == true) {
-                                                SeriesYMagn.resetData(new DataPoint[]{});
-                                                graph2LastXValueYM = 0;
-                                            } else graph2LastXValueYM += STEP;
-
-                                            if (Lock == true) {
-                                                graphView.getViewport().setMinX(0);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            } else {
-                                                graphView.getViewport().setMinX(graph2LastXValueYM - Xview);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            }
-
-                                            ileRazyYM++;
-
-                                            try
-                                            {
-                                                Thread.sleep(DELAY);
-                                            } catch (InterruptedException e) {
-                                                e.printStackTrace();
-                                            }
-
-                                            /*GraphView.removeView(graphView);
-                                            GraphView.addView(graphView);*/
-                                        } else {
-                                            ileRazyYM = 0;
-                                        }
-
-                                        if (ileRazyZM < ((int)(MAX_X/STEP) + 1)) {
-
-                                            valuesZM[ileRazyZM] = new DataPoint(graph2LastXValueZM, mrs.get(i).getZ());
-                                            SeriesZMagn.appendData(valuesZM[ileRazyZM], AutoScrollX, ((int)(MAX_X/STEP) + 1));
-
-                                            if (graph2LastXValueZM >= Xview && Lock == true) {
-                                                SeriesZMagn.resetData(new DataPoint[]{});
-                                                graph2LastXValueZM = 0;
-                                            } else graph2LastXValueZM += STEP;
-
-                                            if (Lock == true) {
-                                                graphView.getViewport().setMinX(0);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            } else {
-                                                graphView.getViewport().setMinX(graph2LastXValueZM - Xview);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            }
-
-
-                                            ileRazyZM++;
-
-                                            try
-                                            {
-                                                Thread.sleep(DELAY);
-                                            } catch (InterruptedException e) {
-                                                e.printStackTrace();
-                                            }
-
-                                            /*GraphView.removeView(graphView);
-                                            GraphView.addView(graphView);*/
-                                        }
-                                        else
-                                        {
-                                            ileRazyZM = 0;
-                                        }
-                                    }
-                                    else if (mrs.get(i).getId_mrs().equals("t"))
-                                    {
-                                        if (ileRazyT < ((int)(MAX_X/STEP) + 1))
-                                        {
-
-                                            valuesT[ileRazyT] = new DataPoint(graph2LastXValueT, mrs.get(i).getX());
-                                            SeriesT.appendData(valuesT[ileRazyT], AutoScrollX, ((int)(MAX_X/STEP) + 1));
-
-                                            if (graph2LastXValueT >= Xview && Lock == true) {
-                                                SeriesT.resetData(new DataPoint[]{});
-                                                graph2LastXValueT = 0;
-                                            } else graph2LastXValueT += STEP;
-
-                                            if (Lock == true) {
-                                                graphView.getViewport().setMinX(0);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            } else {
-                                                graphView.getViewport().setMinX(graph2LastXValueT - Xview);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            }
-
-                                            ileRazyT++;
-
-
-                                            try
-                                            {
-                                                Thread.sleep(DELAY);
-                                            } catch (InterruptedException e) {
-                                                e.printStackTrace();
-                                            }
-
-                                            /*GraphView.removeView(graphView);
-                                            GraphView.addView(graphView);*/
-                                        }
-                                        else
-                                        {
-                                            ileRazyT = 0;
-
-                                        /*GraphView.removeView(graphView);
-                                        GraphView.addView(graphView);*/
-                                        }
-                                    }
-                                    else if (mrs.get(i).getId_mrs().equals("h"))
-                                    {
-                                        if (ileRazyH < ((int)(MAX_X/STEP) + 1))
-                                        {
-
-                                            valuesH[ileRazyH] = new DataPoint(graph2LastXValueH, mrs.get(i).getX());
-                                            SeriesH.appendData(valuesH[ileRazyH], AutoScrollX, ((int)(MAX_X/STEP) + 1));
-
-                                            if (graph2LastXValueH >= Xview && Lock == true) {
-                                                SeriesH.resetData(new DataPoint[]{});
-                                                graph2LastXValueH = 0;
-                                            } else graph2LastXValueH += STEP;
-
-                                            if (Lock == true) {
-                                                graphView.getViewport().setMinX(0);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            } else {
-                                                graphView.getViewport().setMinX(graph2LastXValueH - Xview);
-                                                graphView.getViewport().setMaxX(Xview);
-                                            }
-                                            ileRazyH++;
-
-
-                                            try
-                                            {
-                                                Thread.sleep(DELAY);
-                                            } catch (InterruptedException e) {
-                                                e.printStackTrace();
-                                            }
-
-                                            /*GraphView.removeView(graphView);
-                                            GraphView.addView(graphView);*/
-                                        }
-                                        else
-                                        {
-                                            ileRazyH = 0;
-
-                                        /*GraphView.removeView(graphView);
-                                        GraphView.addView(graphView);*/
-                                        }
-                                    }
-                                }//
+                                @Override
+                                public void run() {
 
                                 try
                                 {
-                                    Thread.sleep(DELAY);
-                                } catch (InterruptedException e) {
+                                    JSONObject jsonRootObject = new JSONObject(m);
+
+                                    //Get the instance of JSONArray that contains JSONObjects
+                                    JSONArray jsonArray = jsonRootObject.optJSONArray("m");
+
+                                    if(!mrs.isEmpty())
+                                    {
+                                        mrs.clear();
+                                    }
+
+                                    if(jsonArray != null)
+                                    {
+                                        for(int i=0; i < jsonArray.length(); i++){
+                                            JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+
+                                            String id = jsonObject.optString("id").toString();
+                                            if(!(id.equals("t") || id.equals("h")))
+                                            {
+                                                float x = Float.parseFloat(jsonObject.optString("x").toString());
+                                                float y = Float.parseFloat(jsonObject.optString("y").toString());
+                                                float z = Float.parseFloat(jsonObject.optString("z").toString());
+
+                                                mrs.add(new Measurements(id,x,y,z));
+                                            }else
+                                            {
+                                                //id = "";
+                                                float x = Float.parseFloat(jsonObject.optString("x").toString());
+                                                float y = 0;
+                                                float z = 0;
+                                                mrs.add(new Measurements(id,x,y,z));
+                                            }
+                                            //String name = jsonObject.optString("name").toString();
+                                            //float salary = Float.parseFloat(jsonObject.optString("salary").toString());
+
+                                          //  data += "Node"+i+" : \n id= "+ id +" \n Name= "+ name +" \n Salary= "+ salary +" \n ";
+                                        }
+                                        //output.setText(data);
+                                    }
+                                }
+                                catch (JSONException e)
+                                {
                                     e.printStackTrace();
                                 }
-                                GraphView.removeView(graphView);
-                                GraphView.addView(graphView);
 
-                                canI = true;
-                            }
+                                    fragment.get().getActivity().runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            if (readMessage != null && !mrs.isEmpty()) {
+                                                for (int i = 0; i < mrs.size(); i++) {
+                                                    if (mrs.get(i).getId_mrs().equals("a")) {
+                                                        if (ileRazyX < ((int) (MAX_X / STEP) + 1)) {
+
+                                                            valuesX[ileRazyX] = new DataPoint(graph2LastXValueX, mrs.get(i).getX() * 9.81);
+                                                            SeriesXAccel.appendData(valuesX[ileRazyX], AutoScrollX, ((int) (MAX_X / STEP) + 1));
+
+                                                            if (graph2LastXValueX >= Xview && Lock == true) {
+                                                                SeriesXAccel.resetData(new DataPoint[]{});
+                                                                graph2LastXValueX = 0;
+                                                            } else graph2LastXValueX += STEP;
+
+                                                            if (Lock == true) {
+                                                                graphView.getViewport().setMinX(0);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            } else {
+                                                                graphView.getViewport().setMinX(graph2LastXValueX - Xview);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            }
+
+                                                            ileRazyX++;
+
+                                                            try {
+                                                                Thread.sleep(DELAY);
+                                                            } catch (InterruptedException e) {
+                                                                e.printStackTrace();
+                                                            }
+
+                                                            /*GraphView.removeView(graphView);
+                                                            GraphView.addView(graphView);*/
+                                                        } else {
+                                                            ileRazyX = 0;
+
+                                                        /*GraphView.removeView(graphView);
+                                                        GraphView.addView(graphView);*/
+                                                        }
+
+                                                        if (ileRazyY < ((int) (MAX_X / STEP) + 1)) {
+                                                            valuesY[ileRazyY] = new DataPoint(graph2LastXValueY, mrs.get(i).getY() * 9.81);
+                                                            SeriesYAccel.appendData(valuesY[ileRazyY], AutoScrollX, ((int) (MAX_X / STEP) + 1));
+
+                                                            if (graph2LastXValueY >= Xview && Lock == true) {
+                                                                SeriesYAccel.resetData(new DataPoint[]{});
+                                                                graph2LastXValueY = 0;
+                                                            } else graph2LastXValueY += STEP;
+
+                                                            if (Lock == true) {
+                                                                graphView.getViewport().setMinX(0);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            } else {
+                                                                graphView.getViewport().setMinX(graph2LastXValueY - Xview);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            }
+
+                                                            ileRazyY++;
+
+                                                            try {
+                                                                Thread.sleep(DELAY);
+                                                            } catch (InterruptedException e) {
+                                                                e.printStackTrace();
+                                                            }
+
+                                                            /*GraphView.removeView(graphView);
+                                                            GraphView.addView(graphView);*/
+                                                        } else {
+                                                            ileRazyY = 0;
+                                                        }
+
+                                                        if (ileRazyZ < ((int) (MAX_X / STEP) + 1)) {
+
+                                                            valuesZ[ileRazyZ] = new DataPoint(graph2LastXValueZ, mrs.get(i).getZ() * 9.81);
+                                                            SeriesZAccel.appendData(valuesZ[ileRazyZ], AutoScrollX, ((int) (MAX_X / STEP) + 1));
+
+                                                            if (graph2LastXValueZ >= Xview && Lock == true) {
+                                                                SeriesZAccel.resetData(new DataPoint[]{});
+                                                                graph2LastXValueZ = 0;
+                                                            } else graph2LastXValueZ += STEP;
+
+                                                            if (Lock == true) {
+                                                                graphView.getViewport().setMinX(0);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            } else {
+                                                                graphView.getViewport().setMinX(graph2LastXValueZ - Xview);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            }
+
+
+                                                            ileRazyZ++;
+
+                                                            try {
+                                                                Thread.sleep(DELAY);
+                                                            } catch (InterruptedException e) {
+                                                                e.printStackTrace();
+                                                            }
+
+                                                            /*GraphView.removeView(graphView);
+                                                            GraphView.addView(graphView);*/
+                                                        } else {
+                                                            ileRazyZ = 0;
+
+                                                            //GraphView.removeView(graphView);
+                                                            //GraphView.addView(graphView);
+                                                        }
+                                                    } else if (mrs.get(i).getId_mrs().equals("g")) {
+                                                        if (ileRazyXG < ((int) (MAX_X / STEP) + 1)) {
+
+                                                            valuesXG[ileRazyXG] = new DataPoint(graph2LastXValueXG, mrs.get(i).getX());
+                                                            SeriesXGyro.appendData(valuesXG[ileRazyXG], AutoScrollX, ((int) (MAX_X / STEP) + 1));
+
+                                                            if (graph2LastXValueXG >= Xview && Lock == true) {
+                                                                SeriesXGyro.resetData(new DataPoint[]{});
+                                                                graph2LastXValueXG = 0;
+                                                            } else graph2LastXValueXG += STEP;
+
+                                                            if (Lock == true) {
+                                                                graphView.getViewport().setMinX(0);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            } else {
+                                                                graphView.getViewport().setMinX(graph2LastXValueXG - Xview);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            }
+
+                                                            ileRazyXG++;
+
+                                                            try {
+                                                                Thread.sleep(DELAY);
+                                                            } catch (InterruptedException e) {
+                                                                e.printStackTrace();
+                                                            }
+
+                                                            /*GraphView.removeView(graphView);
+                                                            GraphView.addView(graphView);*/
+                                                        } else {
+                                                            ileRazyXG = 0;
+
+                                                        /*GraphView.removeView(graphView);
+                                                        GraphView.addView(graphView);*/
+                                                        }
+
+                                                        if (ileRazyYG < ((int) (MAX_X / STEP) + 1)) {
+                                                            valuesYG[ileRazyYG] = new DataPoint(graph2LastXValueYG, mrs.get(i).getY());
+                                                            SeriesYGyro.appendData(valuesYG[ileRazyYG], AutoScrollX, ((int) (MAX_X / STEP) + 1));
+
+                                                            if (graph2LastXValueYG >= Xview && Lock == true) {
+                                                                SeriesYGyro.resetData(new DataPoint[]{});
+                                                                graph2LastXValueYG = 0;
+                                                            } else graph2LastXValueYG += STEP;
+
+                                                            if (Lock == true) {
+                                                                graphView.getViewport().setMinX(0);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            } else {
+                                                                graphView.getViewport().setMinX(graph2LastXValueYG - Xview);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            }
+
+                                                            ileRazyYG++;
+
+                                                            try {
+                                                                Thread.sleep(DELAY);
+                                                            } catch (InterruptedException e) {
+                                                                e.printStackTrace();
+                                                            }
+
+                                                            /*GraphView.removeView(graphView);
+                                                            GraphView.addView(graphView);*/
+                                                        } else {
+                                                            ileRazyYG = 0;
+                                                        }
+
+                                                        if (ileRazyZG < ((int) (MAX_X / STEP) + 1)) {
+
+                                                            valuesZG[ileRazyZG] = new DataPoint(graph2LastXValueZG, mrs.get(i).getZ());
+                                                            SeriesZGyro.appendData(valuesZG[ileRazyZG], AutoScrollX, ((int) (MAX_X / STEP) + 1));
+
+                                                            if (graph2LastXValueZG >= Xview && Lock == true) {
+                                                                SeriesZGyro.resetData(new DataPoint[]{});
+                                                                graph2LastXValueZG = 0;
+                                                            } else graph2LastXValueZG += STEP;
+
+                                                            if (Lock == true) {
+                                                                graphView.getViewport().setMinX(0);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            } else {
+                                                                graphView.getViewport().setMinX(graph2LastXValueZG - Xview);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            }
+
+
+                                                            ileRazyZG++;
+
+                                                            try {
+                                                                Thread.sleep(DELAY);
+                                                            } catch (InterruptedException e) {
+                                                                e.printStackTrace();
+                                                            }
+
+                                                            /*GraphView.removeView(graphView);
+                                                            GraphView.addView(graphView);*/
+                                                        } else {
+                                                            ileRazyZG = 0;
+
+                                                            //GraphView.removeView(graphView);
+                                                            //GraphView.addView(graphView);
+                                                        }
+                                                    } else if (mrs.get(i).getId_mrs().equals("m")) {
+                                                        if (ileRazyXM < ((int) (MAX_X / STEP) + 1)) {
+
+                                                            valuesXM[ileRazyXM] = new DataPoint(graph2LastXValueXM, mrs.get(i).getX());
+                                                            SeriesXMagn.appendData(valuesXM[ileRazyXM], AutoScrollX, ((int) (MAX_X / STEP) + 1));
+
+                                                            if (graph2LastXValueXM >= Xview && Lock == true) {
+                                                                SeriesXMagn.resetData(new DataPoint[]{});
+                                                                graph2LastXValueXM = 0;
+                                                            } else graph2LastXValueXM += STEP;
+
+                                                            if (Lock == true) {
+                                                                graphView.getViewport().setMinX(0);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            } else {
+                                                                graphView.getViewport().setMinX(graph2LastXValueXM - Xview);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            }
+
+                                                            ileRazyXM++;
+
+                                                            try {
+                                                                Thread.sleep(DELAY);
+                                                            } catch (InterruptedException e) {
+                                                                e.printStackTrace();
+                                                            }
+
+                                                            /*GraphView.removeView(graphView);
+                                                            GraphView.addView(graphView);*/
+                                                        } else {
+                                                            ileRazyXM = 0;
+
+                                                        /*GraphView.removeView(graphView);
+                                                        GraphView.addView(graphView);*/
+                                                        }
+
+                                                        if (ileRazyYM < ((int) (MAX_X / STEP) + 1)) {
+                                                            valuesYM[ileRazyYM] = new DataPoint(graph2LastXValueYM, mrs.get(i).getY());
+                                                            SeriesYMagn.appendData(valuesYM[ileRazyYM], AutoScrollX, ((int) (MAX_X / STEP) + 1));
+
+                                                            if (graph2LastXValueYM >= Xview && Lock == true) {
+                                                                SeriesYMagn.resetData(new DataPoint[]{});
+                                                                graph2LastXValueYM = 0;
+                                                            } else graph2LastXValueYM += STEP;
+
+                                                            if (Lock == true) {
+                                                                graphView.getViewport().setMinX(0);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            } else {
+                                                                graphView.getViewport().setMinX(graph2LastXValueYM - Xview);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            }
+
+                                                            ileRazyYM++;
+
+                                                            try {
+                                                                Thread.sleep(DELAY);
+                                                            } catch (InterruptedException e) {
+                                                                e.printStackTrace();
+                                                            }
+
+                                                            /*GraphView.removeView(graphView);
+                                                            GraphView.addView(graphView);*/
+                                                        } else {
+                                                            ileRazyYM = 0;
+                                                        }
+
+                                                        if (ileRazyZM < ((int) (MAX_X / STEP) + 1)) {
+
+                                                            valuesZM[ileRazyZM] = new DataPoint(graph2LastXValueZM, mrs.get(i).getZ());
+                                                            SeriesZMagn.appendData(valuesZM[ileRazyZM], AutoScrollX, ((int) (MAX_X / STEP) + 1));
+
+                                                            if (graph2LastXValueZM >= Xview && Lock == true) {
+                                                                SeriesZMagn.resetData(new DataPoint[]{});
+                                                                graph2LastXValueZM = 0;
+                                                            } else graph2LastXValueZM += STEP;
+
+                                                            if (Lock == true) {
+                                                                graphView.getViewport().setMinX(0);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            } else {
+                                                                graphView.getViewport().setMinX(graph2LastXValueZM - Xview);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            }
+
+
+                                                            ileRazyZM++;
+
+                                                            try {
+                                                                Thread.sleep(DELAY);
+                                                            } catch (InterruptedException e) {
+                                                                e.printStackTrace();
+                                                            }
+
+                                                            /*GraphView.removeView(graphView);
+                                                            GraphView.addView(graphView);*/
+                                                        } else {
+                                                            ileRazyZM = 0;
+                                                        }
+                                                    } else if (mrs.get(i).getId_mrs().equals("t")) {
+                                                        if (ileRazyT < ((int) (MAX_X / STEP) + 1)) {
+
+                                                            valuesT[ileRazyT] = new DataPoint(graph2LastXValueT, mrs.get(i).getX());
+                                                            SeriesT.appendData(valuesT[ileRazyT], AutoScrollX, ((int) (MAX_X / STEP) + 1));
+
+                                                            if (graph2LastXValueT >= Xview && Lock == true) {
+                                                                SeriesT.resetData(new DataPoint[]{});
+                                                                graph2LastXValueT = 0;
+                                                            } else graph2LastXValueT += STEP;
+
+                                                            if (Lock == true) {
+                                                                graphView.getViewport().setMinX(0);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            } else {
+                                                                graphView.getViewport().setMinX(graph2LastXValueT - Xview);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            }
+
+                                                            ileRazyT++;
+
+
+                                                            try {
+                                                                Thread.sleep(DELAY);
+                                                            } catch (InterruptedException e) {
+                                                                e.printStackTrace();
+                                                            }
+
+                                                            /*GraphView.removeView(graphView);
+                                                            GraphView.addView(graphView);*/
+                                                        } else {
+                                                            ileRazyT = 0;
+
+                                                        /*GraphView.removeView(graphView);
+                                                        GraphView.addView(graphView);*/
+                                                        }
+                                                    } else if (mrs.get(i).getId_mrs().equals("h")) {
+                                                        if (ileRazyH < ((int) (MAX_X / STEP) + 1)) {
+
+                                                            valuesH[ileRazyH] = new DataPoint(graph2LastXValueH, mrs.get(i).getX());
+                                                            SeriesH.appendData(valuesH[ileRazyH], AutoScrollX, ((int) (MAX_X / STEP) + 1));
+
+                                                            if (graph2LastXValueH >= Xview && Lock == true) {
+                                                                SeriesH.resetData(new DataPoint[]{});
+                                                                graph2LastXValueH = 0;
+                                                            } else graph2LastXValueH += STEP;
+
+                                                            if (Lock == true) {
+                                                                graphView.getViewport().setMinX(0);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            } else {
+                                                                graphView.getViewport().setMinX(graph2LastXValueH - Xview);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            }
+                                                            ileRazyH++;
+
+
+                                                            try {
+                                                                Thread.sleep(DELAY);
+                                                            } catch (InterruptedException e) {
+                                                                e.printStackTrace();
+                                                            }
+
+                                                            /*GraphView.removeView(graphView);
+                                                            GraphView.addView(graphView);*/
+                                                        } else {
+                                                            ileRazyH = 0;
+
+                                                        /*GraphView.removeView(graphView);
+                                                        GraphView.addView(graphView);*/
+                                                        }
+                                                    }
+                                                }//
+
+                                                try {
+                                                    Thread.sleep(DELAY);
+                                                } catch (InterruptedException e) {
+                                                    e.printStackTrace();
+                                                }
+                                                GraphView.removeView(graphView);
+                                                GraphView.addView(graphView);
+
+                                                canI = true;
+                                            } else {
+                                                canI = true;
+                                            }
+                                        }
+                                    });
+                                }
+                            })).start();
+
                         }
 
 
@@ -1217,6 +1243,19 @@ public class All_Sensors  extends Fragment implements View.OnClickListener {
                     SeriesXAccel.resetData(new DataPoint[]{});
                     SeriesYAccel.resetData(new DataPoint[]{});
                     SeriesZAccel.resetData(new DataPoint[]{});
+
+                    SeriesXGyro.resetData(new DataPoint[]{});
+                    SeriesYGyro.resetData(new DataPoint[]{});
+                    SeriesZGyro.resetData(new DataPoint[]{});
+
+                    SeriesXMagn.resetData(new DataPoint[]{});
+                    SeriesYMagn.resetData(new DataPoint[]{});
+                    SeriesZMagn.resetData(new DataPoint[]{});
+
+                    SeriesT.resetData(new DataPoint[]{});
+                    SeriesH.resetData(new DataPoint[]{});
+
+                    resetVariables();
 
                     GraphView.removeView(graphView);
                     GraphView.addView(graphView);

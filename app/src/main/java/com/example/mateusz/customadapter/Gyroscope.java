@@ -30,12 +30,49 @@ import com.jjoe64.graphview.*;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 
 public class Gyroscope  extends Fragment implements View.OnClickListener {
+
+    static class Measurements
+    {
+        String id_mrs;
+        float x;
+        float y;
+        float z;
+
+        Measurements(String id, float x, float y, float z)
+        {
+            id_mrs = id;
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+
+        public float getX() {
+            return x;
+        }
+
+        public String getId_mrs() {
+            return id_mrs;
+        }
+
+        public float getY() {
+            return y;
+        }
+
+        public float getZ() {
+            return z;
+        }
+    }
 
     public final int REQUEST_ENABLE_BT = 1;
     private boolean turnedOn = false;
@@ -56,12 +93,17 @@ public class Gyroscope  extends Fragment implements View.OnClickListener {
 
     int huj = 0;
 
+    static final double STEP = 0.1;
+    static final int MAX_X = 10;
+
     static DataPoint[] values = new DataPoint[100];
-    static DataPoint[] valuesX = new DataPoint[100];
-    static DataPoint[] valuesY = new DataPoint[100];
-    static DataPoint[] valuesZ = new DataPoint[100];
+    static DataPoint[] valuesX = new DataPoint[(int)(MAX_X/STEP) + 1];
+    static DataPoint[] valuesY = new DataPoint[(int)(MAX_X/STEP) + 1];
+    static DataPoint[] valuesZ = new DataPoint[(int)(MAX_X/STEP) + 1];
 
     List<BtDevice> bluetoothDevicesList = new ArrayList<>();
+    static List<String> readChars = new ArrayList<>();
+    static List<Measurements>mrs = new ArrayList<>();
 
     //Button init
     Button bXminus;
@@ -75,14 +117,16 @@ public class Gyroscope  extends Fragment implements View.OnClickListener {
     static LinearLayout RightLayout;
     static GraphView graphView;
     static LineGraphSeries Series;
-    static LineGraphSeries SeriesX;
-    static LineGraphSeries SeriesY;
-    static LineGraphSeries SeriesZ;
+    static LineGraphSeries SeriesXGyr;
+    static LineGraphSeries SeriesYGyr;
+    static LineGraphSeries SeriesZGyr;
     //graph value
     private static double graph2LastXValue = 0;
     private static double graph2LastXValueX = 0;
     private static double graph2LastXValueY = 0;
     private static double graph2LastXValueZ = 0;
+
+    static boolean canI = true;
 
     private static int Xview=10;
     Button bConnect, bDisconnect;
@@ -93,6 +137,8 @@ public class Gyroscope  extends Fragment implements View.OnClickListener {
     public BluetoothConnection connection = null;
     BluetoothAdapter receivedBluetoothAdapter;
     static BluetoothDevice receivedBluetoothDevice;
+
+    private final MyHandler mHandler = new MyHandler(this);
 
     static boolean isX = false;
     static boolean isMinusX = false;
@@ -283,7 +329,7 @@ public class Gyroscope  extends Fragment implements View.OnClickListener {
 
 
         graphView.getGridLabelRenderer().setGridColor(Color.WHITE);
-        graphView.getGridLabelRenderer().setVerticalAxisTitle("Acceleration");
+        graphView.getGridLabelRenderer().setVerticalAxisTitle("Degrees/s");
         graphView.getGridLabelRenderer().setVerticalAxisTitleColor(Color.WHITE);
 
         graphView.getGridLabelRenderer().setHorizontalLabelsColor(Color.WHITE);
@@ -303,20 +349,20 @@ public class Gyroscope  extends Fragment implements View.OnClickListener {
         Series.setColor(Color.RED);
         Series.setThickness(2);*/
 
-        SeriesX = new LineGraphSeries<DataPoint>(new DataPoint[]{new DataPoint(0, 0)});
-        SeriesX.setTitle("X accel");
-        SeriesX.setColor(Color.RED);
-        SeriesX.setThickness(2);
+        SeriesXGyr = new LineGraphSeries<DataPoint>(new DataPoint[]{new DataPoint(0, 0)});
+        SeriesXGyr.setTitle("X gyro");
+        SeriesXGyr.setColor(Color.RED);
+        SeriesXGyr.setThickness(2);
 
-        SeriesY = new LineGraphSeries<DataPoint>(new DataPoint[]{new DataPoint(0, 0)});
-        SeriesY.setTitle("Y accel");
-        SeriesY.setColor(Color.BLUE);
-        SeriesY.setThickness(2);
+        SeriesYGyr = new LineGraphSeries<DataPoint>(new DataPoint[]{new DataPoint(0, 0)});
+        SeriesYGyr.setTitle("Y gyro");
+        SeriesYGyr.setColor(Color.BLUE);
+        SeriesYGyr.setThickness(2);
 
-        SeriesZ = new LineGraphSeries<DataPoint>(new DataPoint[]{new DataPoint(0, 0)});
-        SeriesZ.setTitle("Z accel");
-        SeriesZ.setColor(Color.GREEN);
-        SeriesZ.setThickness(2);
+        SeriesZGyr = new LineGraphSeries<DataPoint>(new DataPoint[]{new DataPoint(0, 0)});
+        SeriesZGyr.setTitle("Z gyro");
+        SeriesZGyr.setColor(Color.GREEN);
+        SeriesZGyr.setThickness(2);
 
        /* graphView = new GraphView(this);
         graphView.setTitle("Graph");*/
@@ -336,9 +382,9 @@ public class Gyroscope  extends Fragment implements View.OnClickListener {
         graphView.getViewport().setMaxY(245);
 
         // graphView.addSeries(Series);
-        graphView.addSeries(SeriesX);
-        graphView.addSeries(SeriesY);
-        graphView.addSeries(SeriesZ);
+        graphView.addSeries(SeriesXGyr);
+        graphView.addSeries(SeriesYGyr);
+        graphView.addSeries(SeriesZGyr);
 
 
 //        GraphView.addView(graphView);
@@ -433,7 +479,16 @@ public class Gyroscope  extends Fragment implements View.OnClickListener {
     /**
      * The Handler that gets information back from the BluetoothChatService
      */
-    private static final Handler mHandler = new Handler(Looper.getMainLooper()) {
+    /*private final Handler mHandler = new Handler(Looper.getMainLooper()) */
+    private static class MyHandler extends Handler
+    {
+        private final WeakReference<Gyroscope> fragment;
+
+        public MyHandler(Gyroscope f)
+        {
+            fragment = new WeakReference<Gyroscope>(f);
+        }
+
         @Override
         public void handleMessage(Message msg) {
             //ChosenDevice activity = this.;
@@ -459,253 +514,173 @@ public class Gyroscope  extends Fragment implements View.OnClickListener {
                 case Constants.MESSAGE_READ:
                     byte[] readBuf = (byte[]) msg.obj;
 
-                    String readMessage = new String(readBuf, 0, msg.arg1);
-                    //char[] readMessage1 = readMessage.toCharArray();
-
-                    if(readMessage != null)
+                    //String readMessage = new String(readBuf, 0, msg.arg1);
+                    if(canI)
                     {
+                        final String readMessage = new String(readBuf, 0, msg.arg1);
+                        //char[] readMessage1 = readMessage.toCharArray();
 
-                        if(ileRazyX < 100)
+                        if(!readMessage.contains("]"))
                         {
-                            if(readMessage.equals("x"))
-                            {
-                                isX = true;
-                            }
-
-                            if(isX)
-                            {
-                                /*if(readMessage.equals("-"))
-                                {
-                                    isMinusX = true;
-                                }*/
-
-                                if(isFloatNumber(readMessage))
-                                {
-                                    //double d = (double)Integer.parseInt(readMessage);
-                                    double d = parseFloat(readMessage);
-                                    if(-0.00 == d) d = 0.00;
-
-                                    /*if(isMinusX)
-                                    {
-                                        d = d * (-1);
-                                        valuesX[ileRazyX] = new DataPoint(graph2LastXValueX, d);
-                                    }
-                                    else
-                                    {
-                                        valuesX[ileRazyX] = new DataPoint(graph2LastXValueX, d);
-                                    }*/
-                                    //graph2LastXValueX += 0.5;
-
-                                    valuesX[ileRazyX] = new DataPoint(graph2LastXValueX, d);
-                                    SeriesX.appendData(valuesX[ileRazyX],AutoScrollX,101);
-
-                                    if (graph2LastXValueX >= Xview && Lock == true){
-                                        SeriesX.resetData(new DataPoint[] {});
-                                        graph2LastXValueX = 0;
-                                    }
-                                    else graph2LastXValueX += 0.04;
-
-                                    if(Lock == true){
-                                        graphView.getViewport().setMinX(0);
-                                        graphView.getViewport().setMaxX(Xview);
-                                    }
-                                    else
-                                    {
-                                        graphView.getViewport().setMinX(graph2LastXValueX-Xview);
-                                        graphView.getViewport().setMaxX(Xview);
-                                    }
-
-                                    /*GraphView.removeView(graphView);
-                                    GraphView.addView(graphView);
-
-                                    try {
-                                        Thread.sleep(2);
-                                    } catch (InterruptedException e) {
-                                        e.printStackTrace();
-                                    }*/
-
-
-                                    ileRazyX++;
-
-                                    isX = false;
-                                    isMinusX = false;
-
-                                }
-                            }
-                        }else
-                        {
-                            ileRazyX = 0;
-                            /*graph2LastXValueX = 0;
-
-                            SeriesX.resetData(valuesX);*/
-
-                            GraphView.removeView(graphView);
-                            GraphView.addView(graphView);
-                        }
-
-                        if(ileRazyY < 100)
-                        {
-                            if(readMessage.equals("y"))
-                            {
-                                isY = true;
-                            }
-
-                            if(isY)
-                            {
-                                /*if(readMessage.equals("-"))
-                                {
-                                    isMinusY = true;
-                                }*/
-
-                                if(isFloatNumber(readMessage))
-                                {
-                                    //double d = (double)Integer.parseInt(readMessage);
-                                    double d = parseFloat(readMessage);
-                                    if(-0.00 == d) d = 0.00;
-                                    /*if(isMinusY)
-                                    {
-                                        d = d * (-1);
-                                        valuesY[ileRazyY] = new DataPoint(graph2LastXValueY, d);
-                                    }
-                                    else
-                                    {
-                                        valuesY[ileRazyY] = new DataPoint(graph2LastXValueY, d);
-                                    }*/
-
-                                    valuesY[ileRazyY] = new DataPoint(graph2LastXValueY, d);
-                                    SeriesY.appendData(valuesY[ileRazyY],AutoScrollX,101);
-
-                                    if (graph2LastXValueY >= Xview && Lock == true){
-                                        SeriesY.resetData(new DataPoint[] {});
-                                        graph2LastXValueY = 0;
-                                    }
-                                    else graph2LastXValueY += 0.04;
-
-                                    if(Lock == true){
-                                        graphView.getViewport().setMinX(0);
-                                        graphView.getViewport().setMaxX(Xview);
-                                    }
-                                    else
-                                    {
-                                        graphView.getViewport().setMinX(graph2LastXValueY-Xview);
-                                        graphView.getViewport().setMaxX(Xview);
-                                    }
-
-                                    /*GraphView.removeView(graphView);
-                                    GraphView.addView(graphView);*/
-
-
-                                    ileRazyY++;
-
-                                    isY = false;
-                                    isMinusY = false;
-
-                                    /*try {
-                                        Thread.sleep(4);
-                                    } catch (InterruptedException e) {
-                                        e.printStackTrace();
-                                    }*/
-
-
-                                }
-                            }
+                            readChars.add(readMessage);
                         }
                         else
                         {
-                            ileRazyY = 0;
+                            canI = false;
+                            readChars.add(readMessage);
 
-                            /*GraphView.removeView(graphView);
-                            GraphView.addView(graphView);*/
-                        }
+                            String[] k = new String[readChars.size()];
+                            k = readChars.toArray(k);
+                            //String m = "";
 
-                        if(ileRazyZ < 100)
-                        {
-                            if(readMessage.equals("z"))
-                            {
-                                isZ = true;
-                            }
+                            Iterator<String> iter = readChars.iterator();
+                            StringBuilder sb = new StringBuilder();
 
-                            if(isZ)
-                            {
-                                /*if(readMessage.equals("-"))
-                                {
-                                    isMinusZ = true;
-                                }*/
-
-                                if(isFloatNumber(readMessage))
-                                {
-                                    //double d = (double)Integer.parseInt(readMessage);
-                                    double d = parseFloat(readMessage);
-                                    if(-0.00 == d) d = 0.00;
-
-
-                                    /*if(isMinusZ)
-                                    {
-                                        d = d * (-1);
-                                        valuesZ[ileRazyZ] = new DataPoint(graph2LastXValueZ, d);
-                                    }
-                                    else
-                                    {
-                                        valuesZ[ileRazyZ] = new DataPoint(graph2LastXValueZ, d);
-                                    }*/
-
-                                    valuesZ[ileRazyZ] = new DataPoint(graph2LastXValueZ, d);
-                                    SeriesZ.appendData(valuesZ[ileRazyZ],AutoScrollX,101);
-
-                                    if (graph2LastXValueZ >= Xview && Lock == true){
-                                        SeriesZ.resetData(new DataPoint[] {});
-                                        graph2LastXValueZ = 0;
-                                    }
-                                    else graph2LastXValueZ += 0.04;
-
-                                    if(Lock == true){
-                                        graphView.getViewport().setMinX(0);
-                                        graphView.getViewport().setMaxX(Xview);
-                                    }
-                                    else
-                                    {
-                                        graphView.getViewport().setMinX(graph2LastXValueZ-Xview);
-                                        graphView.getViewport().setMaxX(Xview);
-                                    }
-
-
-                                    ileRazyZ++;
-
-                                    isZ = false;
-                                    isMinusZ = false;
-
-
-
-                                    /*GraphView.removeView(graphView);
-                                    GraphView.addView(graphView);
-
-                                    try {
-                                        Thread.sleep(4);
-                                    } catch (InterruptedException e) {
-                                        e.printStackTrace();
-                                    }*/
-
+                            if (iter.hasNext()) {
+                                sb.append(iter.next());
+                                while (iter.hasNext()) {
+                                    sb.append("").append(iter.next());
                                 }
                             }
-                        }
-                        else
-                        {
-                            ileRazyZ = 0;
+                            final String m = sb.toString();
 
-                            //GraphView.removeView(graphView);
-                            //GraphView.addView(graphView);
-                        }
+                            if(!readChars.isEmpty())
+                            {
+                                readChars.clear();
+                            }
 
-                        try
-                        {
-                            Thread.sleep(4);
+                            (new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try{
+                                        JSONObject jsonRootObject = new JSONObject(m);
+
+                                        //Get the instance of JSONArray that contains JSONObjects
+                                        JSONArray jsonArray = jsonRootObject.optJSONArray("m");
+
+                                        if(!mrs.isEmpty())
+                                        {
+                                            mrs.clear();
+                                        }
+
+                                        if(jsonArray != null){
+                                            for(int i = 0; i < jsonArray.length(); i++)
+                                            {
+                                                JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+                                                String id = jsonObject.optString("id").toString();
+
+                                                float x = Float.parseFloat(jsonObject.optString("x").toString());
+                                                float y = Float.parseFloat(jsonObject.optString("y").toString());
+                                                float z = Float.parseFloat(jsonObject.optString("z").toString());
+
+                                                mrs.add(new Measurements(id,x,y,z));
+                                            }
+                                        }
+                                    }catch (org.json.JSONException e)
+                                    {
+                                        ;
+                                    }
+
+                                    fragment.get().getActivity().runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            if (readMessage != null && !mrs.isEmpty()){
+                                                for (int i = 0; i < mrs.size(); i++)
+                                                {
+                                                    if (mrs.get(i).getId_mrs().equals("g")) {
+                                                        if (ileRazyX < ((int) (MAX_X / STEP) + 1)) {
+
+                                                            valuesX[ileRazyX] = new DataPoint(graph2LastXValueX, mrs.get(i).getX());
+                                                            SeriesXGyr.appendData(valuesX[ileRazyX], AutoScrollX, ((int) (MAX_X / STEP) + 1));
+
+                                                            if (graph2LastXValueX >= Xview && Lock == true) {
+                                                                SeriesXGyr.resetData(new DataPoint[]{});
+                                                                graph2LastXValueX = 0;
+                                                            } else graph2LastXValueX += STEP;
+
+                                                            if (Lock == true) {
+                                                                graphView.getViewport().setMinX(0);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            } else {
+                                                                graphView.getViewport().setMinX(graph2LastXValueX - Xview);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            }
+
+                                                            ileRazyX++;
+
+                                                        } else {
+                                                            ileRazyX = 0;
+
+                                                                    /*GraphView.removeView(graphView);
+                                                                    GraphView.addView(graphView);*/
+                                                        }
+
+                                                        if (ileRazyY < ((int) (MAX_X / STEP) + 1)) {
+                                                            valuesY[ileRazyY] = new DataPoint(graph2LastXValueY, mrs.get(i).getY());
+                                                            SeriesYGyr.appendData(valuesY[ileRazyY], AutoScrollX, ((int) (MAX_X / STEP) + 1));
+
+                                                            if (graph2LastXValueY >= Xview && Lock == true) {
+                                                                SeriesYGyr.resetData(new DataPoint[]{});
+                                                                graph2LastXValueY = 0;
+                                                            } else graph2LastXValueY += STEP;
+
+                                                            if (Lock == true) {
+                                                                graphView.getViewport().setMinX(0);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            } else {
+                                                                graphView.getViewport().setMinX(graph2LastXValueY - Xview);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            }
+
+                                                            ileRazyY++;
+
+                                                        } else {
+                                                            ileRazyY = 0;
+                                                        }
+
+                                                        if (ileRazyZ < ((int) (MAX_X / STEP) + 1)) {
+
+                                                            valuesZ[ileRazyZ] = new DataPoint(graph2LastXValueZ, mrs.get(i).getZ());
+                                                            SeriesZGyr.appendData(valuesZ[ileRazyZ], AutoScrollX, ((int) (MAX_X / STEP) + 1));
+
+                                                            if (graph2LastXValueZ >= Xview && Lock == true) {
+                                                                SeriesZGyr.resetData(new DataPoint[]{});
+                                                                graph2LastXValueZ = 0;
+                                                            } else graph2LastXValueZ += STEP;
+
+                                                            if (Lock == true) {
+                                                                graphView.getViewport().setMinX(0);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            } else {
+                                                                graphView.getViewport().setMinX(graph2LastXValueZ - Xview);
+                                                                graphView.getViewport().setMaxX(Xview);
+                                                            }
+
+
+                                                            ileRazyZ++;
+                                                        } else {
+                                                            ileRazyZ = 0;
+
+                                                            //GraphView.removeView(graphView);
+                                                            //GraphView.addView(graphView);
+                                                        }
+                                                    }
+                                                }
+                                                GraphView.removeView(graphView);
+                                                GraphView.addView(graphView);
+
+                                                canI = true;
+                                            }
+                                            else
+                                            {
+                                                canI = true;
+                                            }
+                                        }
+                                    });
+                                }
+                            })).start();
                         }
-                        catch (InterruptedException e)
-                        {
-                            e.printStackTrace();
-                        }
-                        GraphView.removeView(graphView);
-                        GraphView.addView(graphView);
                     }
                     break;
                 case Constants.MESSAGE_SOCKET_ERROR:
@@ -804,9 +779,9 @@ public class Gyroscope  extends Fragment implements View.OnClickListener {
                     connection.disconnect();
                     connection = null;
 
-                    SeriesX.resetData(new DataPoint[]{});
-                    SeriesY.resetData(new DataPoint[]{});
-                    SeriesZ.resetData(new DataPoint[]{});
+                    SeriesXGyr.resetData(new DataPoint[]{});
+                    SeriesYGyr.resetData(new DataPoint[]{});
+                    SeriesZGyr.resetData(new DataPoint[]{});
 
                     GraphView.removeView(graphView);
                     GraphView.addView(graphView);

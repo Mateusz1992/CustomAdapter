@@ -189,10 +189,10 @@ public class BluetoothConnection{
         Log.d(TAG, "connect to: " + device);
 
         //Check if you have chosen a device
-        if(chosen_sensor == null)
+        /*if(chosen_sensor == null)
         {
             mHandler.obtainMessage(Constants.MESSAGE_DEVICE_NO_CHOICE).sendToTarget();
-        }
+        }*/
 
 
         // Cancel any thread attempting to make a connection
