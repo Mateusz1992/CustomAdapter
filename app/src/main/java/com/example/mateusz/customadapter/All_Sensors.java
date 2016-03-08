@@ -738,7 +738,8 @@ public class All_Sensors  extends Fragment implements View.OnClickListener {
                                     e.printStackTrace();
                                 }
 
-                                    fragment.get().getActivity().runOnUiThread(new Runnable() {
+                                    fragment.get().getActivity().runOnUiThread(new Runnable()
+                                    {
                                         @Override
                                         public void run() {
                                             if (readMessage != null && !mrs.isEmpty()) {

@@ -152,6 +152,17 @@ public class Magnetometer  extends Fragment implements View.OnClickListener {
     static boolean isZ = false;
     static boolean isMinusZ = false;
 
+    public void resetVariables()
+    {
+        graph2LastXValueX = 0;
+        graph2LastXValueY = 0;
+        graph2LastXValueZ = 0;
+
+        ileRazyX = 0;
+        ileRazyY = 0;
+        ileRazyZ = 0;
+    }
+
 
     public final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
@@ -782,6 +793,8 @@ public class Magnetometer  extends Fragment implements View.OnClickListener {
                     receivedBluetoothDevice = null;
                     connection.disconnect();
                     connection = null;
+
+                    resetVariables();
 
                     SeriesXMag.resetData(new DataPoint[]{});
                     SeriesYMag.resetData(new DataPoint[]{});

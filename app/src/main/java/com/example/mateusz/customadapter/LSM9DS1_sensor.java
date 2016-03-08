@@ -141,6 +141,17 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
 
     private final MyHandler mHandler = new MyHandler(this);
 
+    public void resetVariables()
+    {
+        ileRazyX = 0;
+        ileRazyY = 0;
+        ileRazyZ = 0;
+
+        graph2LastXValueX = 0;
+        graph2LastXValueY = 0;
+        graph2LastXValueZ = 0;
+    }
+
     public final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
@@ -768,6 +779,8 @@ public class LSM9DS1_sensor  extends Fragment implements View.OnClickListener {
                     receivedBluetoothDevice = null;
                     connection.disconnect();
                     connection = null;
+
+                    resetVariables();
 
                     SeriesXAccel.resetData(new DataPoint[]{});
                     SeriesYAccel.resetData(new DataPoint[]{});

@@ -129,6 +129,12 @@ public class Humidity  extends Fragment implements View.OnClickListener {
 
     static boolean canI = true;
 
+    public void resetVariables()
+    {
+        graph2LastXValueX = 0;
+
+        ileRazyX = 0;
+    }
 
     public final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
@@ -701,6 +707,8 @@ public class Humidity  extends Fragment implements View.OnClickListener {
                     receivedBluetoothDevice = null;
                     connection.disconnect();
                     connection = null;
+
+                    resetVariables();
 
                     SeriesH.resetData(new DataPoint[]{});
 
